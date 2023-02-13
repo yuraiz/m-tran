@@ -1,0 +1,82 @@
+WHITESPACE = _{ " " | NEWLINE }
+COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE) }
+
+ident = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC+ }
+type = @{ident}
+
+program = _{ SOI ~ fun+ ~ EOI }
+
+// LITERALS
+literal = { char | str | int | double | bool }
+
+    char = @{ "'" ~ (!"'" ~ ANY) ~ "'" }
+
+    str = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+    int = { decimal | hexadecimal | binary }
+        decimal = @{ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT+ | ASCII_DIGIT }
+        hexadecimal = @{ "0x" ~ ASCII_HEX_DIGIT+ }
+        binary = @{ "0b" ~ ASCII_BIN_DIGIT+ }
+
+    double = @{ (decimal? ~ "." ~ decimal) | (decimal ~ ".") }
+
+    bool = { "true" | "false" }
+
+// FUNCTION DEFENITION
+fun = { "fun" ~ ident ~ "(" ~ ((func_arg ~ ",")* ~ func_arg)? ~ ")" ~ (":" ~ type)? ~ (scope | "=" ~ expr) }
+
+    func_arg = { ident ~ ":" ~ type }
+    scope = { "{" ~ expr* ~ "}" }
+
+// EXPRESSIONS
+expr = { control_exp | binding | set | call | math_expr | short_expr }
+    short_expr = _{ literal | ident }
+
+    call = { ident ~ "(" ~ args? ~ ")" }
+        args = { (expr ~ "," )* ~ expr }
+
+
+// Control expressions
+control_exp = _{if | for | return}
+
+    if = { "if" ~ "(" ~ expr ~ ")" ~ (scope | expr) ~ else? }
+        else = { "else" ~ (scope | expr)  }
+
+    return = { "return" ~ (!return ~ expr)? }
+
+    for = { "for" ~ "(" ~ ident ~"in" ~ expr ~ ")" ~ scope }
+
+// OPERATORS
+
+// operator = { op_greater | op_set | op_range}
+//     op_greater = { "number < 0" }
+//     op_set = { "result = result * number"}
+//     op_range = @{ (literal | ident) ~ ".." ~ (literal | ident) }
+
+math_expr = { prefix* ~ primary ~ (infix ~ prefix* ~ primary )* }
+
+infix    =  _{ add | sub | mul | div | range | cmp }
+    // basic
+    add = { "+" }
+    sub = { "-" }
+    mul = { "*" }
+    div = { "/" }
+    mod = { "%" } 
+
+    range = { ".." }
+
+    cmp = { langle | rangle }
+
+    langle = { "<" }
+    rangle = { ">" }
+
+prefix = _{ neg }
+    neg = { "-" } // Negation
+primary = _{ short_expr | "(" ~ expr ~ ")" }
+
+set = { ident ~ "=" ~ expr }
+
+// BINDINGS
+binding = { var | val }
+    var = { "var" ~ ident ~ "=" ~ expr }
+    val = { "val" ~ ident ~ "=" ~ expr }
