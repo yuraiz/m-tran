@@ -2,23 +2,23 @@ WHITESPACE = _{ " " | NEWLINE }
 COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE) }
 
 ident = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC+ }
-type = @{ident}
+type = @{ ident ~ ("<" ~ type ~ ">")? }
 
 program = _{ SOI ~ fun+ ~ EOI }
 
 // LITERALS
-literal = { char | str | int | double | bool }
+literal = { char | str | int | bool }
 
-    char = @{ "'" ~ (!"'" ~ ANY) ~ "'" }
+    escaped_char = _{"\\" ~ ("t" | "b" | "n" | "r" | "'" | "\"" | "\\" | "$")}
 
-    str = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+    char = @{ "'" ~ (!"'" ~ (escaped_char | (!"\\" ~ ANY))) ~ "'" }
+
+    str = @{ "\"" ~ (!"\"" ~ (escaped_char | (!"\\" ~ ANY)))* ~ "\"" }
 
     int = { decimal | hexadecimal | binary }
         decimal = @{ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT+ | ASCII_DIGIT }
         hexadecimal = @{ "0x" ~ ASCII_HEX_DIGIT+ }
         binary = @{ "0b" ~ ASCII_BIN_DIGIT+ }
-
-    double = @{ (decimal? ~ "." ~ decimal) | (decimal ~ ".") }
 
     bool = { "true" | "false" }
 
@@ -26,10 +26,12 @@ literal = { char | str | int | double | bool }
 fun = { "fun" ~ ident ~ "(" ~ ((func_arg ~ ",")* ~ func_arg)? ~ ")" ~ (":" ~ type)? ~ (scope | "=" ~ expr) }
 
     func_arg = { ident ~ ":" ~ type }
-    scope = { "{" ~ expr* ~ "}" }
+    scope = { "{" ~ top_expr* ~ "}" }
 
 // EXPRESSIONS
-expr = { control_exp | binding | set | call | math_expr | short_expr }
+expr = { top_expr | math_expr | short_expr }
+    top_expr = { control_exp | binding | set | call }
+
     short_expr = _{ literal | ident }
 
     call = { ident ~ "(" ~ args? ~ ")" }
@@ -46,12 +48,9 @@ control_exp = _{if | for | return}
 
     for = { "for" ~ "(" ~ ident ~"in" ~ expr ~ ")" ~ scope }
 
-// OPERATORS
+    while = { "while" ~ "(" ~ expr ~ ")" ~ scope }
 
-// operator = { op_greater | op_set | op_range}
-//     op_greater = { "number < 0" }
-//     op_set = { "result = result * number"}
-//     op_range = @{ (literal | ident) ~ ".." ~ (literal | ident) }
+// OPERATORS
 
 math_expr = { prefix* ~ primary ~ (infix ~ prefix* ~ primary )* }
 
@@ -70,11 +69,13 @@ infix    =  _{ add | sub | mul | div | range | cmp }
     langle = { "<" }
     rangle = { ">" }
 
-prefix = _{ neg }
+prefix = _{ neg | bool_neg }
     neg = { "-" } // Negation
-primary = _{ short_expr | "(" ~ expr ~ ")" }
+    bool_neg = { "!" }
+primary = _{ call | short_expr | "(" ~ expr ~ ")" }
 
 set = { ident ~ "=" ~ expr }
+set_by_index = { ident ~ "[" ~ expr ~ "]" ~ "=" ~ expr} 
 
 // BINDINGS
 binding = { var | val }

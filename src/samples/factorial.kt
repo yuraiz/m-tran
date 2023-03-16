@@ -12,6 +12,6 @@ fun factorial(number: Int): Int {
 
 fun main() {
     for (number in 0..5) {
-        println("factorial of $number is ${factorial(number)}")
+        println("factorial of " + number + " is " + factorial(number))
     }
 }

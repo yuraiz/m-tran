@@ -5,20 +5,21 @@ use parser::{KotlinParser, Rule};
 use pest::Parser;
 
 fn main() {
-    let fun = KotlinParser::parse(Rule::program, include_str!("samples/factorial.kt"))
+    let fun = KotlinParser::parse(Rule::program, include_str!("samples/hello.kt"))
         .unwrap_or_else(|e| panic!("{}", e));
 
-    // print_pairs(0, fun);
     let mut map = HashMap::new();
 
-    map.insert("println", Rule::fun);
+    for name in ["println", "print", "arrayOf"] {
+        map.insert(name, Rule::fun);
+    }
 
-    print_pairs(0, fun.clone());
+    // print_pairs(0, fun.clone());
 
     get_idents(fun.clone(), &mut map);
     check_idents(fun, &map);
 
-    println!("name table = {:#?}", map);
+    print_as_tables(&map);
 }
 
 fn get_idents<'a>(pairs: pest::iterators::Pairs<'a, Rule>, map: &mut HashMap<&'a str, Rule>) {
@@ -51,6 +52,44 @@ fn check_idents(pairs: pest::iterators::Pairs<Rule>, map: &HashMap<&str, Rule>) 
             }
             _ => check_idents(pair.to_owned().into_inner(), map),
         };
+    }
+}
+
+fn print_as_tables(map: &HashMap<&str, Rule>) {
+    let var_bindings = map.iter().filter(|pair| {
+        matches!(
+            pair.1,
+            Rule::val | Rule::var | Rule::func_arg | Rule::fun | Rule::r#for
+        )
+    });
+
+    let literals = map
+        .iter()
+        .filter(|pair| matches!(pair.1, Rule::str | Rule::int | Rule::r#bool | Rule::r#char));
+
+    println!("Identifiers:");
+    for (name, ty) in var_bindings {
+        let ty = match ty {
+            Rule::val => "as val",
+            Rule::var => "as var",
+            Rule::func_arg => "as function arg",
+            Rule::fun => "as function",
+            Rule::r#for => "in for",
+            _ => unreachable!(),
+        };
+        println!("  identifier {name} declared {ty}");
+    }
+
+    println!("Literals:");
+    for (val, ty) in literals {
+        let ty = match ty {
+            Rule::str => "string",
+            Rule::int => "integer",
+            Rule::r#bool => "boolean",
+            Rule::r#char => "char",
+            _ => unreachable!(),
+        };
+        println!("  {ty} literal {val}");
     }
 }
 
