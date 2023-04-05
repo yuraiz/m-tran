@@ -82,10 +82,7 @@ where
 
         let (expr, pairs) = try_parse(pairs)?;
 
-        let hi = pairs
-            .first()
-            .and_then(|p| p.span.lo.checked_sub(1))
-            .unwrap_or(lo);
+        let hi = pairs.first().map(|p| p.span.lo).unwrap_or(lo);
 
         let span = Span { lo, hi };
         Ok((Self { span, expr }, pairs))

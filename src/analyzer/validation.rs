@@ -108,6 +108,24 @@ impl Validate for expr::ControlExpr {
     }
 }
 
+impl Validate for expr::Set {
+    fn validate(&self, context: &mut Context) -> Option<ExprType> {
+        let ident = self.name.0.clone();
+        let ty = self.expr.validate(context)?;
+        if let Some(expected) = context.find_var_type(&ident) {
+            if expected != ty {
+                context.error(format!("variable {ident} found but it has different type"));
+                None
+            } else {
+                Some(ExprType::Unit)
+            }
+        } else {
+            context.error(format!("variable {ident} not found in scope"));
+            None
+        }
+    }
+}
+
 impl Validate for expr::Binding {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
         let ident = self.set.name.0.clone();
@@ -182,8 +200,18 @@ impl Validate for expr::While {
 
 impl Validate for expr::Return {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
+        let expected = context.current_ret_type.clone().unwrap();
+
         if let Some(ref expr) = self.0 {
-            expr.validate(context)?;
+            let actual = expr.validate(context)?;
+
+            if actual != expected {
+                context.error(format!("wrong return type"));
+            }
+        } else {
+            if expected != ExprType::Unit {
+                context.error(format!("wrong return type"));
+            }
         }
         Some(ExprType::Unit)
     }
@@ -202,12 +230,15 @@ impl Validate for expr::Expr {
 
 impl Validate for expr::TopExpr {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
-        match self {
-            expr::TopExpr::Call(expr) => expr.validate(context),
-            expr::TopExpr::Binding(expr) => expr.validate(context),
-
-            _ => Some(ExprType::Unit),
-        }
+        use expr::TopExpr::*;
+        let expr: &dyn Validate = match self {
+            Call(expr) => expr,
+            Binding(expr) => expr,
+            Set(expr) => expr,
+            ControlExpr(expr) => expr,
+            _ => panic!(),
+        };
+        expr.validate(context)
     }
 }
 

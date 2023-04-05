@@ -120,7 +120,7 @@ impl<'a> Context<'a> {
     }
 }
 
-fn check_program(prog: &Program) -> Vec<(Span, String)> {
+pub fn check_program(prog: &Program) -> Vec<(Span, String)> {
     let mut context = Context::default();
 
     context.functions.insert(
@@ -152,6 +152,33 @@ fn check_program(prog: &Program) -> Vec<(Span, String)> {
     context.validate_functions(prog);
 
     context.errors
+}
+
+pub fn pretty_print_error(source: &str, span: Span, message: &str) {
+    let Span { lo, hi } = span;
+    let (before, error) = source.split_at(lo);
+    let (error, after) = error.split_at(hi - lo);
+
+    let line_num = before.chars().filter(|&c| c == '\n').count() + 1;
+    let before = before.split('\n').last().unwrap_or_default();
+    let after = after.split('\n').next().unwrap_or_default();
+
+    let line_num_w = line_num.to_string().len() + 1;
+
+    let e = "";
+
+    println!("{e:line_num_w$}|");
+
+    println!("{line_num} | {before}{error}{after}");
+
+    let yellow = "\x1b[93m";
+    let white = "\x1b[0m";
+
+    println!(
+        "{e:line_num_w$}| {e:s$}{yellow}{e:^>w$} {message}{white}",
+        s = before.chars().count(),
+        w = error.chars().count(),
+    );
 }
 
 #[cfg(test)]
