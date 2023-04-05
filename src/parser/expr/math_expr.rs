@@ -3,7 +3,7 @@ use super::*;
 expr_enum!(MathExpr => Neg | Range | Sub | Add | Mul | Div | Parens);
 
 #[derive(Debug, PartialEq)]
-pub struct Parens(Box<Expr>);
+pub struct Parens(pub Box<Expr>);
 
 impl TryParse for Parens {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
@@ -38,7 +38,7 @@ impl TryParse for Parens {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Neg(Box<Expr>);
+pub struct Neg(pub Box<Expr>);
 
 impl TryParse for Neg {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
@@ -52,8 +52,8 @@ macro_rules! binary_operator {
     ($name:ident => $tok:expr) => {
         #[derive(Debug, PartialEq)]
         pub struct $name {
-            left: Box<Expr>,
-            right: Box<Expr>,
+            pub left: Box<Expr>,
+            pub right: Box<Expr>,
         }
 
         impl TryParse for $name {

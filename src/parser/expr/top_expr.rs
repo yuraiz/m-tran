@@ -4,8 +4,8 @@ expr_enum!(TopExpr => ControlExpr | Binding | Set | Call | SetByIndex);
 
 #[derive(Debug, PartialEq)]
 pub struct Binding {
-    is_mut: bool,
-    set: Set,
+    pub is_mut: bool,
+    pub set: Set,
 }
 
 impl TryParse for Binding {
@@ -30,8 +30,8 @@ impl TryParse for Binding {
 
 #[derive(Debug, PartialEq)]
 pub struct Set {
-    name: Ident,
-    expr: Box<Expr>,
+    pub name: Ident,
+    pub expr: Box<Expr>,
 }
 
 impl TryParse for Set {
@@ -50,8 +50,8 @@ impl TryParse for Set {
 
 #[derive(Debug, PartialEq)]
 pub struct Call {
-    name: Ident,
-    args: Vec<Expr>,
+    pub name: Ident,
+    pub args: Vec<Expr>,
 }
 
 impl TryParse for Call {
@@ -69,9 +69,9 @@ impl TryParse for Call {
 
 #[derive(Debug, PartialEq)]
 pub struct SetByIndex {
-    name: Ident,
-    index: Box<Expr>,
-    expr: Box<Expr>,
+    pub name: Ident,
+    pub index: Box<Expr>,
+    pub expr: Box<Expr>,
 }
 
 impl TryParse for SetByIndex {

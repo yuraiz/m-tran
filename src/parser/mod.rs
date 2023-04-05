@@ -1,4 +1,4 @@
-mod expr;
+pub mod expr;
 mod helpers;
 mod parse_error;
 
@@ -42,6 +42,37 @@ where
 {
     T::try_parse(pairs)
 }
+
+// pub struct ExprNode<E> {
+//     span: Span,
+//     expr: E,
+// }
+
+// impl<E> TryParse for ExprNode<E>
+// where
+//     E: TryParse,
+// {
+//     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+//         let lo = pairs
+//             .first()
+//             .ok_or(ParseError::UnexpectedEndOfInput)?
+//             .span
+//             .lo;
+
+//         let (expr, pairs) = try_parse(pairs)?;
+
+//         let hi = pairs
+//             .first()
+//             .ok_or(ParseError::UnexpectedEndOfInput)?
+//             .span
+//             .lo
+//             - 1;
+
+//         let span = Span { lo, hi };
+
+//         Ok((Self { span, expr }, pairs))
+//     }
+// }
 
 impl<T> TryParse for Box<T>
 where
