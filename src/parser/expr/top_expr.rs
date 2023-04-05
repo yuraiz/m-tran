@@ -1,6 +1,6 @@
 use super::*;
 
-expr_enum!(TopExpr => ControlExpr | Binding | Set | Call);
+expr_enum!(TopExpr => ControlExpr | Binding | Set | Call | SetByIndex);
 
 #[derive(Debug, PartialEq)]
 pub struct Binding {
@@ -67,5 +67,78 @@ impl TryParse for Call {
         let call = Call { name, args };
 
         Ok((call, pairs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct SetByIndex {
+    name: Ident,
+    index: Box<Expr>,
+    expr: Box<Expr>,
+}
+
+impl TryParse for SetByIndex {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let (name, pairs) = Ident::try_parse(pairs)?;
+
+        let pairs = expect_symbol(pairs, '[')?;
+        let (index, pairs) = Expr::try_parse(pairs)?;
+        let pairs = expect_symbol(pairs, ']')?;
+
+        let pairs = expect_symbol(pairs, '=')?;
+
+        let (expr, pairs) = Expr::try_parse(pairs)?;
+
+        let set = SetByIndex {
+            name,
+            index: Box::new(index),
+            expr: Box::new(expr),
+        };
+
+        Ok((set, pairs))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::test_helpers::make;
+
+    #[test]
+    fn call() {
+        make::<Expr>("hello(world)");
+        make::<Expr>(r#"println(a + item)"#);
+    }
+
+    #[test]
+    fn set() {
+        assert_eq!(
+            make::<TopExpr>("a = b"),
+            TopExpr::Set(Set {
+                name: make("a"),
+                expr: Box::new(make("b"))
+            })
+        )
+    }
+
+    #[test]
+    fn bindings() {
+        let val: TopExpr = make("val hello = 0");
+        assert_eq!(
+            val,
+            TopExpr::Binding(Binding {
+                is_mut: false,
+                set: make("hello = 0")
+            })
+        );
+
+        let var: TopExpr = make("var test = 4");
+        assert_eq!(
+            var,
+            TopExpr::Binding(Binding {
+                is_mut: true,
+                set: make("test = 4")
+            })
+        );
     }
 }

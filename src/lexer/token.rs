@@ -242,17 +242,22 @@ fn parse_int(string: &str) -> Option<(Token, &str)> {
         digits.parse()
     };
 
+    let chars_after_num = string
+        .chars()
+        .take_while(|c| c.is_ascii_alphanumeric())
+        .count();
+
     let token = if let Ok(number) = parse_res {
-        match string.chars().next() {
-            Some(c) if c.is_whitespace() => Int(number),
-            None => Int(number),
-            _ => Unexpected,
-        }
+        Int(number)
     } else {
         Unexpected
     };
 
-    Some((token, string))
+    if chars_after_num == 0 {
+        Some((token, string))
+    } else {
+        Some((Unexpected, &string[chars_after_num..]))
+    }
 }
 
 #[cfg(test)]
@@ -264,7 +269,7 @@ mod tests {
         assert_eq!(parse_str(r#""Hello, world""#), Some((Str, "")));
         assert_eq!(parse_str(r#""Hello, world"+=8"#), Some((Str, "+=8")));
         assert_eq!(parse_str(r#""Hello, world\n""#), Some((Str, "")));
-        assert_eq!(parse_str(r#""\lol""#), None);
+        assert_eq!(parse_str(r#""\lol""#), Some((Unexpected, "")));
     }
 
     #[test]

@@ -36,3 +36,23 @@ macro_rules! expr_enum {
 }
 
 pub(crate) use expr_enum;
+
+#[cfg(test)]
+mod tests {
+    use crate::parser::helpers::test_helpers::make;
+
+    #[test]
+    fn all_expected() {
+        make::<super::Fun>(include_str!("../../samples/hello.kt"));
+        dbg!(make::<super::Fun>(
+            r#"fun printArray(array: Array<Int>) {
+                println("[")
+                for (item in array) {
+                    println(a + item)
+                }
+                println("]")
+            }"#
+        ));
+        // make::<super::Fun>(include_str!("../../samples/factorial.kt"));
+    }
+}

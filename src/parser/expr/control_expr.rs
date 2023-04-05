@@ -1,6 +1,6 @@
 use super::*;
 
-expr_enum!(ControlExpr => If | For | Return);
+expr_enum!(ControlExpr => If | For | While | Return);
 
 #[derive(Debug, PartialEq)]
 pub struct Return(Option<Box<Expr>>);
@@ -46,10 +46,34 @@ impl TryParse for For {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct While {
+    expr: Box<Expr>,
+    body: Vec<Expr>,
+}
+
+impl TryParse for While {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let (_, pairs) = expect_token(pairs, Token::While)?;
+        let pairs = expect_symbol(pairs, '(')?;
+        let (expr, pairs) = Expr::try_parse(pairs)?;
+        let pairs = expect_symbol(pairs, ')')?;
+
+        let (body, pairs) = expect_body(pairs)?;
+
+        let w = While {
+            expr: Box::new(expr),
+            body,
+        };
+
+        Ok((w, pairs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct If {
     expr: Box<Expr>,
     body: Vec<Expr>,
-    else_branch: Option<Box<Expr>>,
+    else_branch: Vec<Expr>,
 }
 
 impl TryParse for If {
@@ -63,14 +87,20 @@ impl TryParse for If {
 
         let (body, pairs) = expect_body(pairs)?;
 
-        if expect_token(pairs, Token::Else).is_ok() {
-            return Err(ParseError::NotImplementedYet);
-        }
+        let (else_branch, pairs) = if let Ok((_, pairs)) = expect_token(pairs, Token::Else) {
+            if let Ok((e, pairs)) = Expr::try_parse(pairs) {
+                (vec![e], pairs)
+            } else {
+                expect_body(pairs)?
+            }
+        } else {
+            (vec![], pairs)
+        };
 
         let i = If {
             expr: Box::new(expr),
             body,
-            else_branch: None,
+            else_branch,
         };
 
         Ok((i, pairs))
@@ -93,6 +123,47 @@ mod tests {
             "if (value) {
                 return kek
             }",
+        );
+    }
+
+    #[test]
+    fn if_else() {
+        make::<ControlExpr>(
+            r#"if (value) {
+                return kek
+            } else if (kek) {
+                println("kek")
+            } else {
+                return lol
+            }"#,
+        );
+    }
+
+    #[test]
+    fn while_loop() {
+        make::<ControlExpr>(
+            r#"while (expr) {
+                a = b
+                b = a
+            }"#,
+        );
+    }
+
+    #[test]
+    fn for_loop() {
+        make::<ControlExpr>(
+            r#"for (item in collection) {
+                sum = sum + item
+            }"#,
+        );
+    }
+
+    #[test]
+    fn for_range() {
+        make::<ControlExpr>(
+            r#"for (num in 0..(n + 3)) {
+                sum = sum + num
+            }"#,
         );
     }
 }

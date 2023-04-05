@@ -1,6 +1,6 @@
 use super::*;
 
-expr_enum!(MathExpr => Sub | Add | Mul | Div | Parens);
+expr_enum!(MathExpr => Range | Sub | Add | Mul | Div | Parens);
 
 #[derive(Debug, PartialEq)]
 pub struct Parens(Box<Expr>);
@@ -38,7 +38,7 @@ impl TryParse for Parens {
 }
 
 macro_rules! binary_operator {
-    ($name:ident => $sym:literal) => {
+    ($name:ident => $tok:expr) => {
         #[derive(Debug, PartialEq)]
         pub struct $name {
             left: Box<Expr>,
@@ -47,14 +47,14 @@ macro_rules! binary_operator {
 
         impl TryParse for $name {
             fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
-                let sym_pos = get_toplevel_index_of(pairs, $sym);
+                let operator: Token = $tok.into();
 
-                let Some(&pair) = pairs.get(sym_pos) else {
-                                                    return Err(ParseError::UnexpectedEndOfInput);
-                                        };
+                let sym_pos = get_toplevel_index_of(pairs, operator);
+
+                let &pair = pairs.get(sym_pos).ok_or(ParseError::UnexpectedEndOfInput)?;
 
                 if pair.token == Token::NewLine {
-                    Err(ParseError::UnexpectedToken(pair, Token::Symbol($sym)))
+                    Err(ParseError::UnexpectedToken(pair, operator))
                 } else {
                     let (left, right) = pairs.split_at(sym_pos);
 
@@ -73,7 +73,7 @@ macro_rules! binary_operator {
     };
 }
 
-fn get_toplevel_index_of<'a>(pairs: &'a [Pair<'a>], symbol: char) -> usize {
+fn get_toplevel_index_of<'a>(pairs: &'a [Pair<'a>], token: Token) -> usize {
     let mut target_index = usize::MAX;
     let mut nesting_level = 0;
     for (index, pair) in pairs.iter().enumerate() {
@@ -83,10 +83,10 @@ fn get_toplevel_index_of<'a>(pairs: &'a [Pair<'a>], symbol: char) -> usize {
                 ')' => nesting_level -= 1,
                 _ => {}
             }
-            if nesting_level == 0 && s == symbol {
-                target_index = index;
-                break;
-            }
+        }
+        if nesting_level == 0 && pair.token == token {
+            target_index = index;
+            break;
         }
     }
 
@@ -97,6 +97,7 @@ binary_operator!(Mul => '*');
 binary_operator!(Div => '/');
 binary_operator!(Add => '+');
 binary_operator!(Sub => '-');
+binary_operator!(Range => Token::RangeOp);
 
 #[cfg(test)]
 mod tests {
@@ -112,6 +113,7 @@ mod tests {
                 MathExpr::Div(Div { left, right }) => eval_expr(*left) / eval_expr(*right),
                 MathExpr::Add(Add { left, right }) => eval_expr(*left) + eval_expr(*right),
                 MathExpr::Sub(Sub { left, right }) => eval_expr(*left) - eval_expr(*right),
+                _ => panic!(),
             },
             Expr::ShortExpr(ShortExpr::Literal(Literal::Int(int))) => int,
             _ => panic!(),
@@ -134,10 +136,7 @@ mod tests {
 
     #[test]
     fn harder() {
-        dbg!(make::<Expr>("2 + 2 * 2"));
-
         check!(((4 + 2) + 3));
-
         check!((4 / 2 - 4) * ((4 + 2) + 3));
     }
 
@@ -159,5 +158,16 @@ mod tests {
     #[test]
     fn mul_div() {
         check!(30 * 5 / 5);
+    }
+
+    #[test]
+    fn range() {
+        assert_eq!(
+            make::<Expr>("0..(len - 1)"),
+            Expr::MathExpr(MathExpr::Range(Range {
+                left: Box::new(make("0")),
+                right: Box::new(make("(len - 1)"))
+            }))
+        )
     }
 }
