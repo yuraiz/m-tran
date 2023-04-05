@@ -1,7 +1,6 @@
-use super::expr::TopExpr;
-use super::parse_error::*;
+use super::{parse_error::*, Body};
 use crate::lexer::{Pair, Token};
-use crate::parser::{try_parse, TryParse};
+use crate::parser::try_parse;
 
 pub fn expect_token<'a>(pairs: &'a [Pair<'a>], token: Token) -> ParseResult<Pair> {
     let pair = pairs.first().ok_or(ParseError::UnexpectedEndOfInput)?;
@@ -61,13 +60,6 @@ where
     }
 }
 
-pub fn ignore_token<'a>(pairs: &'a [Pair<'a>], token: Token) -> &'a [Pair<'a>] {
-    match pairs.get(0) {
-        Some(Pair { token: tok, .. }) if *tok == token => &pairs[1..],
-        _ => pairs,
-    }
-}
-
 pub fn ignore_newlines<'a>(mut pairs: &'a [Pair<'a>]) -> &'a [Pair<'a>] {
     loop {
         match pairs.get(0) {
@@ -80,7 +72,7 @@ pub fn ignore_newlines<'a>(mut pairs: &'a [Pair<'a>]) -> &'a [Pair<'a>] {
     }
 }
 
-pub fn expect_body<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Vec<TopExpr>> {
+pub fn expect_body<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Body> {
     let pairs = expect_symbol(pairs, '{')?;
 
     let mut mut_pairs = pairs;

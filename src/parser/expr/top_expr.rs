@@ -31,7 +31,7 @@ impl TryParse for Binding {
 #[derive(Debug, PartialEq)]
 pub struct Set {
     pub name: Ident,
-    pub expr: Box<Expr>,
+    pub expr: BoxedExpr,
 }
 
 impl TryParse for Set {
@@ -70,8 +70,8 @@ impl TryParse for Call {
 #[derive(Debug, PartialEq)]
 pub struct SetByIndex {
     pub name: Ident,
-    pub index: Box<Expr>,
-    pub expr: Box<Expr>,
+    pub index: BoxedExpr,
+    pub expr: BoxedExpr,
 }
 
 impl TryParse for SetByIndex {

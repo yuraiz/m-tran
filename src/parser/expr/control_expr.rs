@@ -3,7 +3,7 @@ use super::*;
 expr_enum!(ControlExpr => If | For | While | Return);
 
 #[derive(Debug, PartialEq)]
-pub struct Return(pub Option<Box<Expr>>);
+pub struct Return(pub Option<BoxedExpr>);
 
 impl TryParse for Return {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
@@ -20,8 +20,8 @@ impl TryParse for Return {
 #[derive(Debug, PartialEq)]
 pub struct For {
     pub var: Ident,
-    pub iterable: Box<Expr>,
-    pub body: Vec<TopExpr>,
+    pub iterable: BoxedExpr,
+    pub body: Body,
 }
 
 impl TryParse for For {
@@ -47,8 +47,8 @@ impl TryParse for For {
 
 #[derive(Debug, PartialEq)]
 pub struct While {
-    pub expr: Box<Expr>,
-    pub body: Vec<TopExpr>,
+    pub expr: BoxedExpr,
+    pub body: Body,
 }
 
 impl TryParse for While {
@@ -68,9 +68,9 @@ impl TryParse for While {
 
 #[derive(Debug, PartialEq)]
 pub struct If {
-    pub expr: Box<Expr>,
-    pub body: Vec<TopExpr>,
-    pub else_branch: Vec<TopExpr>,
+    pub expr: BoxedExpr,
+    pub body: Body,
+    pub else_branch: Body,
 }
 
 impl TryParse for If {

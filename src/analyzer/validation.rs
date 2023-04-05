@@ -1,5 +1,5 @@
 use crate::parser::expr::{self, ComparisonExpr, MathExpr};
-use crate::parser::{Fun, Type};
+use crate::parser::{Fun, Spanned, Type};
 
 use super::Context;
 
@@ -72,6 +72,16 @@ pub trait Validate {
     fn validate(&self, _context: &mut Context) -> Option<ExprType>;
 }
 
+impl<E> Validate for Spanned<E>
+where
+    E: Validate,
+{
+    fn validate(&self, context: &mut Context) -> Option<ExprType> {
+        context.last_span = Some(self.span);
+        self.expr.validate(context)
+    }
+}
+
 impl Validate for expr::Literal {
     fn validate(&self, _context: &mut Context) -> Option<ExprType> {
         use expr::Literal::*;
@@ -123,6 +133,7 @@ impl Validate for expr::If {
             context.pop_scope();
             Some(ExprType::Unit)
         } else {
+            context.error("condition must have boolean type".to_owned());
             None
         }
     }
@@ -135,7 +146,10 @@ impl Validate for expr::For {
         let ty = match iter_type {
             ExprType::Array(ty) => ty,
             ExprType::Range(ty) => ty,
-            _ => return None,
+            _ => {
+                context.error("only array and range are iterable types".to_owned());
+                return None;
+            }
         };
 
         context.push_scope();
@@ -160,6 +174,7 @@ impl Validate for expr::While {
             context.pop_scope();
             Some(ExprType::Unit)
         } else {
+            context.error("condition must have boolean type".to_owned());
             None
         }
     }
@@ -198,8 +213,18 @@ impl Validate for expr::TopExpr {
 
 impl Validate for expr::Call {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
-        if let Some(ty) = context.find_fun_type(&self.name.0) {
-            Some(ty.ret_type)
+        let args: Vec<_> = self
+            .args
+            .iter()
+            .filter_map(|arg| arg.validate(context))
+            .collect();
+
+        if args.len() == self.args.len() {
+            if let Some(ret_type) = context.find_fun_ret_type(&self.name.0, &args) {
+                Some(ret_type)
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -221,7 +246,7 @@ impl Validate for expr::MathExpr {
             MathExpr::Div(expr) => {
                 ensure_type_equality(expr.left.as_ref(), expr.right.as_ref(), context)
             }
-            MathExpr::Add(_) => todo!(),
+            MathExpr::Add(expr) => expr.validate(context),
         }
     }
 }
@@ -239,6 +264,7 @@ impl Validate for expr::Add {
         let right = self.right.validate(context)?;
 
         if [&left, &right].contains(&&ExprType::Unit) {
+            context.error("it isn't possible to add items of unit type".to_owned());
             None
         } else if [&left, &right].contains(&&ExprType::Primitive(Primitive::String)) {
             Some(ExprType::Primitive(Primitive::String))
@@ -258,6 +284,7 @@ where
     if l == r {
         Some(r)
     } else {
+        context.error("wrong operands".to_owned());
         None
     }
 }
@@ -272,10 +299,13 @@ impl Validate for expr::ComparisonExpr {
                 ensure_type_equality(expr.left.as_ref(), expr.right.as_ref(), context)
             }
         };
-        // Arrays aren't comparable
+        // Arrays and ranges aren't comparable
         match ty {
             Some(ExprType::Primitive(_)) => ty,
-            _ => None,
+            _ => {
+                context.error("can't compare types".to_string());
+                None
+            }
         }
     }
 }

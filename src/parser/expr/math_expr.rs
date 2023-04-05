@@ -3,7 +3,7 @@ use super::*;
 expr_enum!(MathExpr => Neg | Range | Sub | Add | Mul | Div | Parens);
 
 #[derive(Debug, PartialEq)]
-pub struct Parens(pub Box<Expr>);
+pub struct Parens(pub BoxedExpr);
 
 impl TryParse for Parens {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
@@ -38,7 +38,7 @@ impl TryParse for Parens {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Neg(pub Box<Expr>);
+pub struct Neg(pub BoxedExpr);
 
 impl TryParse for Neg {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
@@ -52,8 +52,8 @@ macro_rules! binary_operator {
     ($name:ident => $tok:expr) => {
         #[derive(Debug, PartialEq)]
         pub struct $name {
-            pub left: Box<Expr>,
-            pub right: Box<Expr>,
+            pub left: BoxedExpr,
+            pub right: BoxedExpr,
         }
 
         impl TryParse for $name {
@@ -115,25 +115,25 @@ mod tests {
     use super::*;
     use test_helpers::*;
 
-    fn eval_expr(expr: Expr) -> i32 {
+    fn eval_expr(expr: &Expr) -> i32 {
         match expr {
             Expr::TopExpr(_) => panic!(),
             Expr::MathExpr(math_expr) => match math_expr {
-                MathExpr::Parens(Parens(expr)) => eval_expr(*expr),
-                MathExpr::Mul(Mul { left, right }) => eval_expr(*left) * eval_expr(*right),
-                MathExpr::Div(Div { left, right }) => eval_expr(*left) / eval_expr(*right),
-                MathExpr::Add(Add { left, right }) => eval_expr(*left) + eval_expr(*right),
-                MathExpr::Sub(Sub { left, right }) => eval_expr(*left) - eval_expr(*right),
+                MathExpr::Parens(Parens(expr)) => eval_expr(&expr),
+                MathExpr::Mul(Mul { left, right }) => eval_expr(&left) * eval_expr(&right),
+                MathExpr::Div(Div { left, right }) => eval_expr(&left) / eval_expr(&right),
+                MathExpr::Add(Add { left, right }) => eval_expr(&left) + eval_expr(&right),
+                MathExpr::Sub(Sub { left, right }) => eval_expr(&left) - eval_expr(&right),
                 _ => panic!(),
             },
-            Expr::ShortExpr(ShortExpr::Literal(Literal::Int(int))) => int,
+            Expr::ShortExpr(ShortExpr::Literal(Literal::Int(int))) => *int,
             _ => panic!(),
         }
     }
 
     macro_rules! check {
         ($ex:expr) => {
-            assert_eq!(eval_expr(make(stringify!($ex))), $ex)
+            assert_eq!(eval_expr(&make(stringify!($ex))), $ex)
         };
     }
 

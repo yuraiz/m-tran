@@ -19,12 +19,15 @@ pub enum Type {
     Generic(Ident, Vec<Type>),
 }
 
+pub type Body = Vec<Spanned<TopExpr>>;
+pub type BoxedExpr = Box<Spanned<Expr>>;
+
 #[derive(Debug, PartialEq)]
 pub struct Fun {
     pub name: Ident,
     pub ret_type: Option<Type>,
     pub args: Vec<(Ident, Type)>,
-    pub body: Vec<TopExpr>,
+    pub body: Body,
 }
 
 pub trait TryParse {
@@ -43,36 +46,59 @@ where
     T::try_parse(pairs)
 }
 
-// pub struct ExprNode<E> {
-//     span: Span,
-//     expr: E,
-// }
+pub struct Spanned<E> {
+    pub span: Span,
+    pub expr: E,
+}
 
-// impl<E> TryParse for ExprNode<E>
-// where
-//     E: TryParse,
-// {
-//     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
-//         let lo = pairs
-//             .first()
-//             .ok_or(ParseError::UnexpectedEndOfInput)?
-//             .span
-//             .lo;
+impl<E> std::fmt::Debug for Spanned<E>
+where
+    E: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.expr.fmt(f)
+    }
+}
 
-//         let (expr, pairs) = try_parse(pairs)?;
+impl<E> PartialEq for Spanned<E>
+where
+    E: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.expr.eq(&other.expr)
+    }
+}
 
-//         let hi = pairs
-//             .first()
-//             .ok_or(ParseError::UnexpectedEndOfInput)?
-//             .span
-//             .lo
-//             - 1;
+impl<E> TryParse for Spanned<E>
+where
+    E: TryParse,
+{
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let lo = pairs
+            .first()
+            .ok_or(ParseError::UnexpectedEndOfInput)?
+            .span
+            .lo;
 
-//         let span = Span { lo, hi };
+        let (expr, pairs) = try_parse(pairs)?;
 
-//         Ok((Self { span, expr }, pairs))
-//     }
-// }
+        let hi = pairs
+            .first()
+            .and_then(|p| p.span.lo.checked_sub(1))
+            .unwrap_or(lo);
+
+        let span = Span { lo, hi };
+        Ok((Self { span, expr }, pairs))
+    }
+}
+
+impl<E> std::ops::Deref for Spanned<E> {
+    type Target = E;
+
+    fn deref(&self) -> &Self::Target {
+        &self.expr
+    }
+}
 
 impl<T> TryParse for Box<T>
 where
