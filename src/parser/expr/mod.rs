@@ -1,8 +1,10 @@
+mod comparison_expr;
 mod control_expr;
 mod math_expr;
 mod short_expr;
 mod top_expr;
 
+pub use comparison_expr::*;
 pub use control_expr::*;
 pub use math_expr::*;
 pub use short_expr::*;
@@ -10,7 +12,7 @@ pub use top_expr::*;
 
 use super::*;
 
-expr_enum!(Expr => TopExpr | MathExpr | ShortExpr);
+expr_enum!(Expr => TopExpr | MathExpr | ComparisonExpr | ShortExpr);
 
 macro_rules! expr_enum {
     ($name:ident => $($type:ident)|+ ) => {
@@ -36,23 +38,3 @@ macro_rules! expr_enum {
 }
 
 pub(crate) use expr_enum;
-
-#[cfg(test)]
-mod tests {
-    use crate::parser::helpers::test_helpers::make;
-
-    #[test]
-    fn all_expected() {
-        make::<super::Fun>(include_str!("../../samples/hello.kt"));
-        dbg!(make::<super::Fun>(
-            r#"fun printArray(array: Array<Int>) {
-                println("[")
-                for (item in array) {
-                    println(a + item)
-                }
-                println("]")
-            }"#
-        ));
-        // make::<super::Fun>(include_str!("../../samples/factorial.kt"));
-    }
-}

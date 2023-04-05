@@ -36,16 +36,13 @@ pub struct Set {
 
 impl TryParse for Set {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
-        let (name, pairs) = Ident::try_parse(pairs)?;
+        let (name, pairs) = try_parse(pairs)?;
 
         let pairs = expect_symbol(pairs, '=')?;
 
-        let (expr, pairs) = Expr::try_parse(pairs)?;
+        let (expr, pairs) = try_parse(pairs)?;
 
-        let set = Set {
-            name,
-            expr: Box::new(expr),
-        };
+        let set = Set { name, expr };
 
         Ok((set, pairs))
     }
@@ -59,7 +56,7 @@ pub struct Call {
 
 impl TryParse for Call {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
-        let (name, pairs) = Ident::try_parse(pairs)?;
+        let (name, pairs) = try_parse(pairs)?;
 
         let (args, pairs) =
             expect_sequence(pairs, '('.into(), ')'.into(), ','.into(), Expr::try_parse)?;
@@ -82,18 +79,14 @@ impl TryParse for SetByIndex {
         let (name, pairs) = Ident::try_parse(pairs)?;
 
         let pairs = expect_symbol(pairs, '[')?;
-        let (index, pairs) = Expr::try_parse(pairs)?;
+        let (index, pairs) = try_parse(pairs)?;
         let pairs = expect_symbol(pairs, ']')?;
 
         let pairs = expect_symbol(pairs, '=')?;
 
-        let (expr, pairs) = Expr::try_parse(pairs)?;
+        let (expr, pairs) = try_parse(pairs)?;
 
-        let set = SetByIndex {
-            name,
-            index: Box::new(index),
-            expr: Box::new(expr),
-        };
+        let set = SetByIndex { name, index, expr };
 
         Ok((set, pairs))
     }
@@ -116,9 +109,21 @@ mod tests {
             make::<TopExpr>("a = b"),
             TopExpr::Set(Set {
                 name: make("a"),
-                expr: Box::new(make("b"))
+                expr: make("b")
             })
         )
+    }
+
+    #[test]
+    fn set_by_index() {
+        assert_eq!(
+            make::<TopExpr>("a[i + j * n] = b"),
+            TopExpr::SetByIndex(SetByIndex {
+                name: Ident("a".to_string()),
+                index: make("i + j * n"),
+                expr: make("b"),
+            })
+        );
     }
 
     #[test]

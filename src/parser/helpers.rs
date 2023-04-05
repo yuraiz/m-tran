@@ -1,6 +1,7 @@
+use super::expr::TopExpr;
 use super::parse_error::*;
 use crate::lexer::{Pair, Token};
-use crate::parser::{Expr, TryParse};
+use crate::parser::{try_parse, TryParse};
 
 pub fn expect_token<'a>(pairs: &'a [Pair<'a>], token: Token) -> ParseResult<Pair> {
     let pair = pairs.first().ok_or(ParseError::UnexpectedEndOfInput)?;
@@ -67,14 +68,26 @@ pub fn ignore_token<'a>(pairs: &'a [Pair<'a>], token: Token) -> &'a [Pair<'a>] {
     }
 }
 
-pub fn expect_body<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Vec<super::Expr>> {
+pub fn ignore_newlines<'a>(mut pairs: &'a [Pair<'a>]) -> &'a [Pair<'a>] {
+    loop {
+        match pairs.get(0) {
+            Some(Pair {
+                token: Token::NewLine,
+                ..
+            }) => pairs = &pairs[1..],
+            _ => return pairs,
+        }
+    }
+}
+
+pub fn expect_body<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Vec<TopExpr>> {
     let pairs = expect_symbol(pairs, '{')?;
 
     let mut mut_pairs = pairs;
     let mut sequence = vec![];
 
     loop {
-        mut_pairs = ignore_token(mut_pairs, Token::NewLine);
+        mut_pairs = ignore_newlines(mut_pairs);
 
         match expect_symbol(mut_pairs, '}') {
             Ok(pairs) => {
@@ -86,7 +99,7 @@ pub fn expect_body<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Vec<super::Expr>> {
             },
         }
 
-        let (element, pairs) = Expr::try_parse(mut_pairs)?;
+        let (element, pairs) = try_parse(mut_pairs)?;
         sequence.push(element);
 
         mut_pairs = pairs;
@@ -108,7 +121,7 @@ pub mod test_helpers {
         T: TryParse,
     {
         let pairs = &pairs(source);
-        let (res, pairs) = T::try_parse(&pairs).unwrap_or_else(|e| panic!("{e}"));
+        let (res, pairs) = try_parse(&pairs).unwrap_or_else(|e| panic!("{e}"));
         assert!(pairs.is_empty(), "source is not fully parsed");
         res
     }
@@ -149,5 +162,22 @@ mod tests {
             },
         )
         .unwrap();
+    }
+
+    #[test]
+    fn body() {
+        for body in [
+            r#"{
+                println("Hello, World!")
+            }"#,
+            r#"{
+                val a = b
+                var b = a
+                a[i] = c
+                a[i + j] = c
+            }"#,
+        ] {
+            assert!(expect_body(&pairs(body)).unwrap().1.is_empty());
+        }
     }
 }

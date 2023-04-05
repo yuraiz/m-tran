@@ -1,6 +1,6 @@
 use super::*;
 
-expr_enum!(MathExpr => Range | Sub | Add | Mul | Div | Parens);
+expr_enum!(MathExpr => Neg | Range | Sub | Add | Mul | Div | Parens);
 
 #[derive(Debug, PartialEq)]
 pub struct Parens(Box<Expr>);
@@ -31,9 +31,20 @@ impl TryParse for Parens {
 
         let (enclosed, pairs) = pairs.split_at(matcing_paren_index);
 
-        let (expr, _) = Expr::try_parse(enclosed)?;
+        let (expr, _) = try_parse(enclosed)?;
         let pairs = expect_symbol(pairs, ')')?;
-        Ok((Parens(Box::new(expr)), pairs))
+        Ok((Parens(expr), pairs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Neg(Box<Expr>);
+
+impl TryParse for Neg {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let pairs = expect_symbol(pairs, '-')?;
+        let (expr, pairs) = try_parse(pairs)?;
+        Ok((Self(expr), pairs))
     }
 }
 
@@ -58,22 +69,22 @@ macro_rules! binary_operator {
                 } else {
                     let (left, right) = pairs.split_at(sym_pos);
 
-                    let (left, _) = Expr::try_parse(left)?;
-                    let (right, pairs) = Expr::try_parse(&right[1..])?;
-                    Ok((
-                        Self {
-                            left: Box::new(left),
-                            right: Box::new(right),
-                        },
-                        pairs,
-                    ))
+                    let (left, empty_pairs) = try_parse(left)?;
+                    if !empty_pairs.is_empty() {
+                        Err(ParseError::WrongExprType(stringify!($name)))
+                    } else {
+                        let (right, pairs) = try_parse(&right[1..])?;
+                        Ok((Self { left, right }, pairs))
+                    }
                 }
             }
         }
     };
 }
 
-fn get_toplevel_index_of<'a>(pairs: &'a [Pair<'a>], token: Token) -> usize {
+pub(crate) use binary_operator;
+
+pub(crate) fn get_toplevel_index_of<'a>(pairs: &'a [Pair<'a>], token: Token) -> usize {
     let mut target_index = usize::MAX;
     let mut nesting_level = 0;
     for (index, pair) in pairs.iter().enumerate() {

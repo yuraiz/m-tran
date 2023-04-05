@@ -9,8 +9,8 @@ impl TryParse for Return {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
         let (_, pairs) = expect_token(pairs, Token::Return)?;
 
-        if let Ok((expr, pairs)) = Expr::try_parse(pairs) {
-            Ok((Return(Some(Box::new(expr))), pairs))
+        if let Ok((expr, pairs)) = try_parse(pairs) {
+            Ok((Return(Some(expr)), pairs))
         } else {
             Ok((Return(None), pairs))
         }
@@ -21,23 +21,23 @@ impl TryParse for Return {
 pub struct For {
     var: Ident,
     iterable: Box<Expr>,
-    body: Vec<Expr>,
+    body: Vec<TopExpr>,
 }
 
 impl TryParse for For {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
         let (_, pairs) = expect_token(pairs, Token::For)?;
         let pairs = expect_symbol(pairs, '(')?;
-        let (var, pairs) = Ident::try_parse(pairs)?;
+        let (var, pairs) = try_parse(pairs)?;
         let (_, pairs) = expect_token(pairs, Token::In)?;
-        let (expr, pairs) = Expr::try_parse(pairs)?;
+        let (iterable, pairs) = try_parse(pairs)?;
         let pairs = expect_symbol(pairs, ')')?;
 
         let (body, pairs) = expect_body(pairs)?;
 
         let f = For {
             var,
-            iterable: Box::new(expr),
+            iterable,
             body,
         };
 
@@ -48,22 +48,19 @@ impl TryParse for For {
 #[derive(Debug, PartialEq)]
 pub struct While {
     expr: Box<Expr>,
-    body: Vec<Expr>,
+    body: Vec<TopExpr>,
 }
 
 impl TryParse for While {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
         let (_, pairs) = expect_token(pairs, Token::While)?;
         let pairs = expect_symbol(pairs, '(')?;
-        let (expr, pairs) = Expr::try_parse(pairs)?;
+        let (expr, pairs) = try_parse(pairs)?;
         let pairs = expect_symbol(pairs, ')')?;
 
         let (body, pairs) = expect_body(pairs)?;
 
-        let w = While {
-            expr: Box::new(expr),
-            body,
-        };
+        let w = While { expr, body };
 
         Ok((w, pairs))
     }
@@ -72,8 +69,8 @@ impl TryParse for While {
 #[derive(Debug, PartialEq)]
 pub struct If {
     expr: Box<Expr>,
-    body: Vec<Expr>,
-    else_branch: Vec<Expr>,
+    body: Vec<TopExpr>,
+    else_branch: Vec<TopExpr>,
 }
 
 impl TryParse for If {
@@ -81,15 +78,15 @@ impl TryParse for If {
         let (_, pairs) = expect_token(pairs, Token::If)?;
         let pairs = expect_symbol(pairs, '(')?;
 
-        let (expr, pairs) = Expr::try_parse(pairs)?;
+        let (expr, pairs) = try_parse(pairs)?;
 
         let pairs = expect_symbol(pairs, ')')?;
 
         let (body, pairs) = expect_body(pairs)?;
 
         let (else_branch, pairs) = if let Ok((_, pairs)) = expect_token(pairs, Token::Else) {
-            if let Ok((e, pairs)) = Expr::try_parse(pairs) {
-                (vec![e], pairs)
+            if let Ok((top_expr, pairs)) = try_parse(pairs) {
+                (vec![top_expr], pairs)
             } else {
                 expect_body(pairs)?
             }
@@ -98,7 +95,7 @@ impl TryParse for If {
         };
 
         let i = If {
-            expr: Box::new(expr),
+            expr,
             body,
             else_branch,
         };

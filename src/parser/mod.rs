@@ -10,27 +10,8 @@ pub use parse_error::{ParseError, ParseResult};
 
 #[derive(Debug)]
 pub struct Program {
-    pub stmts: Vec<Expr>,
+    pub functions: Vec<Fun>,
 }
-
-// #[derive(Debug)]
-// pub struct Expr {
-//     pub span: Span,
-//     pub node: ExprNode,
-// }
-
-// impl TryParse for Expr {}
-
-// impl PartialEq for Expr {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.node == other.node
-//     }
-// }
-
-// #[derive(Debug, PartialEq)]
-// pub enum ExprNode {
-//     Fun(Fun),
-// }
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
@@ -43,7 +24,7 @@ pub struct Fun {
     pub name: Ident,
     pub ret_type: Option<Type>,
     pub args: Vec<(Ident, Type)>,
-    pub body: Vec<Expr>,
+    pub body: Vec<TopExpr>,
 }
 
 pub trait TryParse {
@@ -55,9 +36,41 @@ pub trait TryParse {
     }
 }
 
+pub fn try_parse<'a, T>(pairs: &'a [Pair<'a>]) -> ParseResult<'a, T>
+where
+    T: TryParse,
+{
+    T::try_parse(pairs)
+}
+
+impl<T> TryParse for Box<T>
+where
+    T: TryParse,
+{
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let (res, pairs) = try_parse(pairs)?;
+        Ok((Box::new(res), pairs))
+    }
+}
+
+impl TryParse for Program {
+    fn try_parse<'a>(mut pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let mut functions = vec![];
+        loop {
+            pairs = ignore_newlines(pairs);
+            if pairs.is_empty() {
+                return Ok((Self { functions }, &[]));
+            }
+            let (fun, p) = try_parse(pairs)?;
+            pairs = p;
+            functions.push(fun);
+        }
+    }
+}
+
 impl TryParse for Type {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
-        let (ident, pairs) = Ident::try_parse(pairs)?;
+        let (ident, pairs) = try_parse(pairs)?;
 
         if expect_symbol(pairs, '<').is_ok() {
             let (types, pairs) =
@@ -74,18 +87,18 @@ impl TryParse for Type {
 impl TryParse for Fun {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
         let (_, pairs) = expect_token(pairs, Token::Fun)?;
-        let (name, pairs) = Ident::try_parse(pairs)?;
+        let (name, pairs) = try_parse(pairs)?;
 
         let (args, pairs) = expect_sequence(pairs, '('.into(), ')'.into(), ','.into(), |pairs| {
-            let (arg_name, pairs) = Ident::try_parse(pairs)?;
+            let (arg_name, pairs) = try_parse(pairs)?;
             let pairs = expect_symbol(pairs, ':')?;
-            let (arg_type, pairs) = Type::try_parse(pairs)?;
+            let (arg_type, pairs) = try_parse(pairs)?;
             Ok(((arg_name, arg_type), pairs))
         })?;
 
         let (ret_type, pairs) = match expect_symbol(pairs, ':') {
             Ok(pairs) => {
-                let (ty, pairs) = Type::try_parse(pairs)?;
+                let (ty, pairs) = try_parse(pairs)?;
                 (Some(ty), pairs)
             }
             Err(_) => (None, pairs),
@@ -135,5 +148,12 @@ mod tests {
         assert_eq!(fun.ret_type.unwrap(), make("Int"));
         assert_eq!(fun.args[..], [(Ident("array".into()), make("Array<Int>"))]);
         assert!(fun.body.is_empty())
+    }
+
+    #[test]
+    fn program() {
+        make::<Program>(include_str!("../samples/hello.kt"));
+        make::<Program>(include_str!("../samples/arrays.kt"));
+        dbg!(make::<Program>(include_str!("../samples/factorial.kt")));
     }
 }
