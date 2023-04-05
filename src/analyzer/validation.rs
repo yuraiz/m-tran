@@ -265,7 +265,15 @@ impl Validate for expr::Call {
 impl Validate for expr::MathExpr {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
         match self {
-            MathExpr::Neg(expr) => expr.0.validate(context),
+            MathExpr::Neg(expr) => {
+                let ty = expr.0.validate(context)?;
+                if ty != ExprType::Primitive(Primitive::Int) {
+                    context.error("negation only applicable to Int type".to_string());
+                    None
+                } else {
+                    Some(ty)
+                }
+            }
             MathExpr::Parens(expr) => expr.0.validate(context),
             MathExpr::Range(expr) => expr.validate(context),
             MathExpr::Sub(expr) => {
@@ -332,7 +340,15 @@ impl Validate for expr::ComparisonExpr {
         };
         // Arrays and ranges aren't comparable
         match ty {
-            Some(ExprType::Primitive(_)) => ty,
+            Some(ExprType::Primitive(primitive)) => match primitive {
+                Primitive::Int | Primitive::String | Primitive::Char => {
+                    Some(ExprType::Primitive(Primitive::Boolean))
+                }
+                Primitive::Boolean => {
+                    context.error("can't compare booleans".to_string());
+                    None
+                }
+            },
             _ => {
                 context.error("can't compare types".to_string());
                 None

@@ -37,7 +37,18 @@ impl<'a> Context<'a> {
                 Some(ExprType::Unit)
             };
 
-            self.push_scope();
+            let args = fun
+                .args
+                .iter()
+                .map(|arg| {
+                    let name = (arg.0).0.clone();
+                    let ty = ExprType::from(&arg.1);
+                    (name, ty)
+                })
+                .collect();
+
+            self.scopes.push(args);
+
             for expr in &fun.body {
                 expr.validate(self);
             }
