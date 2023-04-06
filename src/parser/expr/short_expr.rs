@@ -1,8 +1,38 @@
 use super::*;
 
-use super::expr_enum;
+#[allow(clippy::enum_variant_names)]
+#[derive(PartialEq)]
+pub enum ShortExpr {
+    Ident(Ident),
+    Literal(Literal),
+}
 
-expr_enum!(ShortExpr => Ident | Literal);
+impl TryParse for ShortExpr {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let pair = pairs.get(0).ok_or(ParseError::UnexpectedEndOfInput)?;
+
+        match pair.token {
+            Token::Char | Token::Str | Token::Int(_) | Token::Bool(_) => {
+                let (r, pairs) = try_parse(pairs)?;
+                Ok((ShortExpr::Literal(r), pairs))
+            }
+            Token::Ident => {
+                let (r, pairs) = try_parse(pairs)?;
+                Ok((ShortExpr::Ident(r), pairs))
+            }
+            _ => Err(ParseError::WrongExprType(*pair, &stringify!(ShortExpr))),
+        }
+    }
+}
+
+impl std::fmt::Debug for ShortExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ident(child) => child.fmt(f),
+            Self::Literal(child) => child.fmt(f),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Ident(pub String);

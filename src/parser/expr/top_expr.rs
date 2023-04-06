@@ -1,6 +1,55 @@
 use super::*;
 
-expr_enum!(TopExpr => ControlExpr | Binding | Set | Call | SetByIndex);
+#[allow(clippy::enum_variant_names)]
+#[derive(PartialEq)]
+pub enum TopExpr {
+    ControlExpr(ControlExpr),
+    Binding(Binding),
+    Set(Set),
+    Call(Call),
+    SetByIndex(SetByIndex),
+}
+
+impl TryParse for TopExpr {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let pair = pairs.get(0).ok_or(ParseError::UnexpectedEndOfInput)?;
+
+        match pair.token {
+            Token::Ident => {
+                if let Ok((r, pairs)) = Set::try_parse(pairs) {
+                    return Ok((TopExpr::Set(r), pairs));
+                } else if let Ok((r, pairs)) = Call::try_parse(pairs) {
+                    return Ok((TopExpr::Call(r), pairs));
+                } else if let Ok((r, pairs)) = SetByIndex::try_parse(pairs) {
+                    return Ok((TopExpr::SetByIndex(r), pairs));
+                } else {
+                    Err(ParseError::WrongExprType(*pair, &stringify!(TopExpr)))
+                }
+            }
+            Token::If | Token::For | Token::While | Token::Return => {
+                let (r, pairs) = try_parse(pairs)?;
+                Ok((Self::ControlExpr(r), pairs))
+            }
+            Token::Var | Token::Val => {
+                let (binding, pairs) = Binding::try_parse(pairs)?;
+                Ok((Self::Binding(binding), pairs))
+            }
+            _ => Err(ParseError::WrongExprType(*pair, "TopExpr")),
+        }
+    }
+}
+
+impl std::fmt::Debug for TopExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ControlExpr(child) => child.fmt(f),
+            Self::Binding(child) => child.fmt(f),
+            Self::Set(child) => child.fmt(f),
+            Self::Call(child) => child.fmt(f),
+            Self::SetByIndex(child) => child.fmt(f),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Binding {

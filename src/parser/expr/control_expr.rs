@@ -1,6 +1,50 @@
 use super::*;
 
-expr_enum!(ControlExpr => If | For | While | Return);
+#[allow(clippy::enum_variant_names)]
+#[derive(PartialEq)]
+pub enum ControlExpr {
+    If(If),
+    For(For),
+    While(While),
+    Return(Return),
+}
+
+impl TryParse for ControlExpr {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let pair = pairs.get(0).ok_or(ParseError::UnexpectedEndOfInput)?;
+
+        match pair.token {
+            Token::If => {
+                let (r, pairs) = try_parse(pairs)?;
+                Ok((ControlExpr::If(r), pairs))
+            }
+            Token::For => {
+                let (r, pairs) = try_parse(pairs)?;
+                Ok((ControlExpr::For(r), pairs))
+            }
+            Token::While => {
+                let (r, pairs) = try_parse(pairs)?;
+                Ok((ControlExpr::While(r), pairs))
+            }
+            Token::Return => {
+                let (r, pairs) = try_parse(pairs)?;
+                Ok((ControlExpr::Return(r), pairs))
+            }
+            _ => Err(ParseError::WrongExprType(*pair, &stringify!(ControlExpr))),
+        }
+    }
+}
+
+impl std::fmt::Debug for ControlExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::If(child) => child.fmt(f),
+            Self::For(child) => child.fmt(f),
+            Self::While(child) => child.fmt(f),
+            Self::Return(child) => child.fmt(f),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Return(pub Option<BoxedExpr>);
