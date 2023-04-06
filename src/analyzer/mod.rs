@@ -174,19 +174,20 @@ pub fn pretty_print_error(source: &str, span: Span, message: &str) {
     let before = before.split('\n').last().unwrap_or_default();
     let after = after.split('\n').next().unwrap_or_default();
 
-    let line_num_w = line_num.to_string().len() + 1;
+    let line_count = source.chars().filter(|&c| c == '\n').count() + 1;
+    let indent = line_count.to_string().len() + 1;
 
     let e = "";
 
-    println!("{e:line_num_w$}|");
+    eprintln!("{e:indent$} |");
 
-    println!("{line_num} | {before}{error}{after}");
+    eprintln!("{line_num:>indent$} | {before}{error}{after}");
 
     let yellow = "\x1b[93m";
     let white = "\x1b[0m";
 
-    println!(
-        "{e:line_num_w$}| {e:s$}{yellow}{e:^>w$} {message}{white}",
+    eprintln!(
+        "{e:indent$} | {e:s$}{yellow}{e:^>w$} {message}{white}",
         s = before.chars().count(),
         w = error.chars().count(),
     );

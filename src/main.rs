@@ -35,6 +35,10 @@ fn interpret(source: &str) {
             if errors.is_empty() {
                 Context::new(prog).run();
             } else {
+                match errors.len() {
+                    1 => eprintln!("Found error:"),
+                    num => eprintln!("Found {num} errors:"),
+                };
                 for (span, ref message) in check_program(&prog) {
                     pretty_print_error(source, span, message)
                 }
@@ -46,6 +50,7 @@ fn interpret(source: &str) {
 }
 
 fn print_parse_error(source: &str, error: parser::ParseError) {
+    eprintln!("Syntax Error:");
     match error {
         parser::ParseError::UnexpectedEndOfInput => pretty_print_error(
             source,
