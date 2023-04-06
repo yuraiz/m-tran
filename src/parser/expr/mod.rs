@@ -17,7 +17,7 @@ expr_enum!(Expr => TopExpr | MathExpr | ComparisonExpr | ShortExpr);
 macro_rules! expr_enum {
     ($name:ident => $($type:ident)|+ ) => {
         #[allow(clippy::enum_variant_names)]
-        #[derive(Debug, PartialEq)]
+        #[derive(PartialEq)]
         pub enum $name {
              $($type($type)),+
         }
@@ -34,6 +34,16 @@ macro_rules! expr_enum {
                 Err(ParseError::WrongExprType(&stringify!($name)))
             }
         }
+
+        impl std::fmt::Debug for $name {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                $(
+                    Self::$type(child) => child.fmt(f)
+                ),+
+            }
+        }
+}
     };
 }
 
