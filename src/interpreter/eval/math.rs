@@ -10,7 +10,7 @@ impl Eval for MathExpr {
 
         match self {
             MathExpr::Neg(expr) => match expr.0.eval(context) {
-                Object::Int(num) => Object::Int(-num),
+                Object::Int(num) => Object::Int(num.wrapping_neg()),
                 _ => unreachable!(),
             },
             MathExpr::Range(expr) => expr.eval(context),
@@ -19,7 +19,7 @@ impl Eval for MathExpr {
                 let r = expr.right.eval(context);
 
                 match (l, r) {
-                    (Int(l), Int(r)) => Int(l + r),
+                    (Int(l), Int(r)) => Int(l.wrapping_sub(r)),
                     _ => unreachable!(),
                 }
             }
@@ -28,7 +28,7 @@ impl Eval for MathExpr {
                 let r = expr.right.eval(context);
 
                 match (l, r) {
-                    (Int(l), Int(r)) => Int(l * r),
+                    (Int(l), Int(r)) => Int(l.wrapping_mul(r)),
                     _ => unreachable!(),
                 }
             }
@@ -37,7 +37,7 @@ impl Eval for MathExpr {
                 let r = expr.right.eval(context);
 
                 match (l, r) {
-                    (Int(l), Int(r)) => Int(l / r),
+                    (Int(l), Int(r)) => Int(l.wrapping_div(r)),
                     _ => unreachable!(),
                 }
             }
@@ -62,7 +62,7 @@ impl Eval for expr::Add {
         let r = self.right.eval(context);
 
         match (l, r) {
-            (Int(l), Int(r)) => Int(l + r),
+            (Int(l), Int(r)) => Int(l.wrapping_add(r)),
             (String(string), other) => {
                 let mut string = string.to_owned();
                 string.push_str(&other.to_string());
