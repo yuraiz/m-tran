@@ -5,7 +5,7 @@ mod parser;
 
 use analyzer::{check_program, pretty_print_error};
 use interpreter::Context;
-use lexer::Lexer;
+use lexer::{Lexer, Span};
 use parser::{Program, TryParse};
 
 fn main() {
@@ -27,15 +27,47 @@ fn main() {
 
 fn interpret(source: &str) {
     let pairs: Vec<_> = Lexer::new(source).collect();
-    let prog = Program::try_parse(&pairs).unwrap().0;
 
-    let errors = check_program(&prog);
+    match Program::try_parse(&pairs) {
+        Ok((prog, pairs)) if pairs.is_empty() => {
+            let errors = check_program(&prog);
 
-    if errors.is_empty() {
-        Context::new(prog).run();
-    } else {
-        for (span, ref message) in check_program(&prog) {
-            pretty_print_error(source, span, message)
+            if errors.is_empty() {
+                Context::new(prog).run();
+            } else {
+                for (span, ref message) in check_program(&prog) {
+                    pretty_print_error(source, span, message)
+                }
+            }
         }
+        Ok(_) => eprintln!("Source is not fully parsed"),
+        Err(error) => print_parse_error(source, error),
+    }
+}
+
+fn print_parse_error(source: &str, error: parser::ParseError) {
+    match error {
+        parser::ParseError::UnexpectedEndOfInput => pretty_print_error(
+            source,
+            Span {
+                lo: source.len(),
+                hi: source.len(),
+            },
+            &format!("Unexpected end of input"),
+        ),
+        parser::ParseError::NotImplementedYet => eprintln!("Use of not implemented feature"),
+        parser::ParseError::WrongExprType(pair, expected) => pretty_print_error(
+            source,
+            pair.span,
+            &format!("Wrong, expression type, expected: {expected}"),
+        ),
+        parser::ParseError::UnexpectedToken(pair, expected) => pretty_print_error(
+            source,
+            pair.span,
+            &format!(
+                "Wrong token, expected {expected:?} but got {unexpected:?}",
+                unexpected = pair.token
+            ),
+        ),
     }
 }

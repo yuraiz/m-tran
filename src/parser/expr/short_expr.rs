@@ -30,7 +30,7 @@ impl TryParse for Literal {
             Token::Str => Self::String(parse_string(pair.str())),
             Token::Int(val) => Self::Int(val),
             Token::Bool(val) => Self::Bool(val),
-            _ => return Err(ParseError::WrongExprType("Literal")),
+            _ => return Err(ParseError::WrongExprType(*pair, "Literal")),
         };
 
         Ok((literal, &pairs[1..]))

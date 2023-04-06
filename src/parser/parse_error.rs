@@ -7,7 +7,7 @@ use crate::lexer::{Pair, Token};
 pub enum ParseError<'a> {
     UnexpectedEndOfInput,
     NotImplementedYet,
-    WrongExprType(&'static str),
+    WrongExprType(Pair<'a>, &'static str),
     UnexpectedToken(Pair<'a>, Token),
 }
 
@@ -16,7 +16,7 @@ impl<'a> Display for ParseError<'a> {
         match self {
             ParseError::UnexpectedEndOfInput => write!(f, "Unexpected end of input"),
             ParseError::NotImplementedYet => write!(f, "Not implemented yer"),
-            ParseError::WrongExprType(expected) => {
+            ParseError::WrongExprType(_, expected) => {
                 write!(f, "Wrong expression type, expected {expected}")
             }
             ParseError::UnexpectedToken(pair, token) => {

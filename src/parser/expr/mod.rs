@@ -24,6 +24,7 @@ macro_rules! expr_enum {
 
         impl TryParse for $name {
             fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+                let pair = pairs.get(0).ok_or(ParseError::UnexpectedEndOfInput)?;
 
                 $(
                     if let Ok((r, pairs)) = $type::try_parse(pairs) {
@@ -31,7 +32,7 @@ macro_rules! expr_enum {
                     }
                 )+
 
-                Err(ParseError::WrongExprType(&stringify!($name)))
+                Err(ParseError::WrongExprType(*pair, &stringify!($name)))
             }
         }
 

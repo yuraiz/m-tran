@@ -71,7 +71,7 @@ macro_rules! binary_operator {
 
                     let (left, empty_pairs) = try_parse(left)?;
                     if !empty_pairs.is_empty() {
-                        Err(ParseError::WrongExprType(stringify!($name)))
+                        Err(ParseError::WrongExprType(pair, stringify!($name)))
                     } else {
                         let (right, pairs) = try_parse(&right[1..])?;
                         Ok((Self { left, right }, pairs))

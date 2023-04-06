@@ -15,7 +15,8 @@ impl TryParse for Binding {
         } else if let Ok(res) = expect_token(pairs, Token::Var) {
             res
         } else {
-            return Err(ParseError::WrongExprType("Binding"));
+            let pair = pairs.get(1).ok_or(ParseError::UnexpectedEndOfInput)?;
+            return Err(ParseError::WrongExprType(*pair, "Binding"));
         };
 
         let is_mut = pair.token == Token::Var;
