@@ -25,13 +25,17 @@ impl Validate for expr::Call {
             .collect();
 
         if args.len() == self.args.len() {
-            if let Some(ret_type) = context.find_fun_ret_type(&self.name.0, &args) {
+            if let Some(ret_type) = context.find_fun_ret_type(&self.name, Some(&args)) {
                 Some(ret_type)
             } else {
                 None
             }
         } else {
-            None
+            if let Some(ret_type) = context.find_fun_ret_type(&self.name, None) {
+                Some(ret_type)
+            } else {
+                None
+            }
         }
     }
 }
@@ -48,16 +52,19 @@ impl Validate for expr::Binding {
 impl Validate for expr::Set {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
         let ident = self.name.0.clone();
-        let ty = self.expr.validate(context)?;
+        let ty = self.expr.validate(context);
         if let Some(expected) = context.find_var_type(&ident) {
-            if expected != ty {
+            if expected != ty? {
                 context.error(format!("variable {ident} found but it has different type"));
                 None
             } else {
                 Some(ExprType::Unit)
             }
         } else {
-            context.error(format!("variable {ident} not found in scope"));
+            context.error_with_span(
+                format!("variable {ident} not found in scope"),
+                self.name.span,
+            );
             None
         }
     }

@@ -82,8 +82,10 @@ where
     E: Validate,
 {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
-        context.last_span = Some(self.span);
-        self.expr.validate(context)
+        let span = context.last_span.replace(self.span);
+        let ty = self.expr.validate(context);
+        context.last_span = span;
+        ty
     }
 }
 

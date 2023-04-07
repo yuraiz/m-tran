@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use validation::*;
 
 use crate::lexer::Span;
-use crate::parser::Program;
+use crate::parser::expr::Ident;
+use crate::parser::{Program, Spanned};
 
 #[derive(Debug, Default)]
 pub struct Context<'a> {
@@ -56,44 +57,85 @@ impl<'a> Context<'a> {
         }
     }
 
-    fn find_predefined_fun_ret_type(&mut self, ident: &str, args: &[ExprType]) -> Option<ExprType> {
-        match ident {
-            "print" | "println" => Some(ExprType::Primitive(Primitive::String)),
-            "arrayOf" => {
-                if let Some(first) = args.first() {
-                    if args.iter().all(|t| t == first) {
-                        Some(ExprType::Array(first.to_owned().into()))
-                    } else {
-                        self.error("arrayOf arguments must have the same type".to_string());
-                        None
-                    }
-                } else {
-                    self.error("arrayOf must have at least one argument".to_string());
-                    None
-                }
+    fn check_main(&mut self) {
+        if let Some(fun) = self.functions.get("main") {
+            if !fun.args.is_empty() {
+                self.error_with_span(
+                    "function main must accept no arguments".to_string(),
+                    Span { lo: 0, hi: 0 },
+                );
             }
-            "readln" => Some(ExprType::Primitive(Primitive::String)),
-            "readlnInt" => Some(ExprType::Primitive(Primitive::Int)),
-            "readlnBoolean" => Some(ExprType::Primitive(Primitive::Boolean)),
-            _ => None,
+        } else {
+            self.error("function main not found".to_string());
         }
     }
 
-    fn find_fun_ret_type(&mut self, ident: &str, args: &[ExprType]) -> Option<ExprType> {
+    fn find_predefined_fun_ret_type(
+        &mut self,
+        ident: &Spanned<Ident>,
+        args: Option<&[ExprType]>,
+    ) -> Option<ExprType> {
+        match ident.0.as_str() {
+            "print" | "println" => Some(ExprType::Primitive(Primitive::String)),
+            "arrayOf" => {
+                if let Some(args) = args {
+                    if let Some(first) = args.first() {
+                        if args.iter().any(|t| t != first) {
+                            self.error("arrayOf arguments must have the same type".to_string());
+                        }
+                        Some(ExprType::Array(first.to_owned().into()))
+                    } else {
+                        self.error("arrayOf must have at least one argument".to_string());
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            other => {
+                let arg_count = args.map(|a| a.len()).unwrap_or(1);
+                match other {
+                    "readln" | "readlnInt" | "readlnBoolean" => {
+                        if arg_count != 0 {
+                            self.error_with_span(
+                                format!("{other} accepts no arguments"),
+                                ident.span,
+                            );
+                        }
+                        match other {
+                            "readln" => Some(ExprType::Primitive(Primitive::String)),
+                            "readlnInt" => Some(ExprType::Primitive(Primitive::Int)),
+                            "readlnBoolean" => Some(ExprType::Primitive(Primitive::Boolean)),
+                            _ => unreachable!(),
+                        }
+                    }
+                    _ => None,
+                }
+            }
+        }
+    }
+
+    fn find_fun_ret_type(
+        &mut self,
+        ident: &Spanned<Ident>,
+        args: Option<&[ExprType]>,
+    ) -> Option<ExprType> {
+        let name = ident.0.as_str();
+
         if let Some(ty) = self.find_predefined_fun_ret_type(ident, args) {
             Some(ty)
         } else {
-            if let Some(ty) = self.functions.get(ident) {
-                if ty.args == args {
+            if let Some(ty) = self.functions.get(name) {
+                if ty.args == args? {
                     Some(ty.ret_type.clone())
                 } else {
                     self.error(format!(
-                        "function with name {ident} found but it's arguments wrong"
+                        "function with name {name} found but it's arguments wrong"
                     ));
                     None
                 }
             } else {
-                self.error(format!("function with name {ident} not found"));
+                self.error_with_span(format!("function with name {name} not found"), ident.span);
                 None
             }
         }
@@ -125,48 +167,39 @@ impl<'a> Context<'a> {
         self.scopes.pop();
     }
 
+    fn error_with_span(&mut self, err: String, span: Span) {
+        self.errors.push((span, err));
+    }
+
     fn error(&mut self, err: String) {
         let span = self.last_span.unwrap_or(Span { lo: 0, hi: 0 });
-        self.errors.push((span, err))
+        self.error_with_span(err, span);
     }
 }
 
 pub fn check_program(prog: &Program) -> Vec<(Span, String)> {
     let mut context = Context::default();
 
-    context.functions.insert(
-        "println",
-        FunType {
-            args: vec![ExprType::Primitive(Primitive::String)],
-            ret_type: ExprType::Unit,
-        },
-    );
-
-    context.functions.insert(
-        "print",
-        FunType {
-            args: vec![ExprType::Primitive(Primitive::String)],
-            ret_type: ExprType::Unit,
-        },
-    );
-
-    context.functions.insert(
-        "arrayOf",
-        FunType {
-            args: vec![ExprType::Primitive(Primitive::String)],
-            ret_type: ExprType::Unit,
-        },
-    );
-
     context.get_functions(prog);
 
     context.validate_functions(prog);
+
+    context.check_main();
 
     context.errors
 }
 
 pub fn pretty_print_error(source: &str, span: Span, message: &str) {
+    let yellow = "\x1b[93m";
+    let white = "\x1b[0m";
+
     let Span { lo, hi } = span;
+
+    if lo == 0 && hi == 0 {
+        eprintln!("  {yellow}{message}{white}");
+        return;
+    }
+
     let (before, error) = source.split_at(lo);
     let (error, after) = error.split_at(hi - lo);
 
@@ -182,9 +215,6 @@ pub fn pretty_print_error(source: &str, span: Span, message: &str) {
     eprintln!("{e:indent$} |");
 
     eprintln!("{line_num:>indent$} | {before}{error}{after}");
-
-    let yellow = "\x1b[93m";
-    let white = "\x1b[0m";
 
     eprintln!(
         "{e:indent$} | {e:s$}{yellow}{e:^>w$} {message}{white}",

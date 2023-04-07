@@ -80,7 +80,7 @@ impl TryParse for Binding {
 
 #[derive(Debug, PartialEq)]
 pub struct Set {
-    pub name: Ident,
+    pub name: Spanned<Ident>,
     pub expr: BoxedExpr,
 }
 
@@ -100,16 +100,15 @@ impl TryParse for Set {
 
 #[derive(Debug, PartialEq)]
 pub struct Call {
-    pub name: Ident,
-    pub args: Vec<Expr>,
+    pub name: Spanned<Ident>,
+    pub args: Vec<Spanned<Expr>>,
 }
 
 impl TryParse for Call {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
         let (name, pairs) = try_parse(pairs)?;
 
-        let (args, pairs) =
-            expect_sequence(pairs, '('.into(), ')'.into(), ','.into(), Expr::try_parse)?;
+        let (args, pairs) = expect_sequence(pairs, '('.into(), ')'.into(), ','.into(), try_parse)?;
 
         let call = Call { name, args };
 

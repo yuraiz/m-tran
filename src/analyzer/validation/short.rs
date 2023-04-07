@@ -16,7 +16,14 @@ impl Validate for expr::Literal {
 impl Validate for expr::ShortExpr {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
         match self {
-            expr::ShortExpr::Ident(expr::Ident(name)) => context.find_var_type(&name),
+            expr::ShortExpr::Ident(expr::Ident(name)) => {
+                if let Some(ty) = context.find_var_type(&name) {
+                    Some(ty)
+                } else {
+                    context.error(format!("ident {name} not found"));
+                    None
+                }
+            }
             expr::ShortExpr::Literal(literal) => literal.validate(context),
         }
     }
