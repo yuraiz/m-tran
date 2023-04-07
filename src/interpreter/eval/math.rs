@@ -13,6 +13,10 @@ impl Eval for MathExpr {
                 Object::Int(num) => Object::Int(num.wrapping_neg()),
                 _ => unreachable!(),
             },
+            MathExpr::BoolNeg(expr) => match expr.0.eval(context) {
+                Object::Boolean(val) => Object::Boolean(!val),
+                _ => unreachable!(),
+            },
             MathExpr::Range(expr) => expr.eval(context),
             MathExpr::Sub(expr) => {
                 let l = expr.left.eval(context);

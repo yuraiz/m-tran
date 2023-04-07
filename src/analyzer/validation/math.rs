@@ -12,6 +12,15 @@ impl Validate for expr::MathExpr {
                     Some(ty)
                 }
             }
+            MathExpr::BoolNeg(expr) => {
+                let ty = expr.0.validate(context)?;
+                if ty != ExprType::Primitive(Primitive::Boolean) {
+                    context.error("boolean negation only applicable to Boolean type".to_string());
+                    None
+                } else {
+                    Some(ty)
+                }
+            }
             MathExpr::Parens(expr) => expr.0.validate(context),
             MathExpr::Range(expr) => expr.validate(context),
             MathExpr::Sub(expr) => {

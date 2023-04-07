@@ -1,6 +1,6 @@
 use super::*;
 
-expr_enum!(MathExpr => Neg | Range | Sub | Add | Mul | Div | Parens);
+expr_enum!(MathExpr => Neg | BoolNeg | Range | Sub | Add | Mul | Div | Parens);
 
 #[derive(Debug, PartialEq)]
 pub struct Parens(pub BoxedExpr);
@@ -43,6 +43,17 @@ pub struct Neg(pub BoxedExpr);
 impl TryParse for Neg {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
         let pairs = expect_symbol(pairs, '-')?;
+        let (expr, pairs) = try_parse(pairs)?;
+        Ok((Self(expr), pairs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BoolNeg(pub BoxedExpr);
+
+impl TryParse for BoolNeg {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let pairs = expect_symbol(pairs, '!')?;
         let (expr, pairs) = try_parse(pairs)?;
         Ok((Self(expr), pairs))
     }
