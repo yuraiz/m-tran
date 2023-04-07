@@ -134,3 +134,23 @@ mod funcs {
         Object::Array(args)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lexer::*;
+    use crate::parser::*;
+
+    #[test]
+    fn interpretation() {
+        fn interpret(source: &str) {
+            let pairs: Vec<_> = Lexer::new(source).collect();
+            let (prog, _) = Program::try_parse(&pairs).unwrap();
+            Context::new(prog).run()
+        }
+
+        interpret(include_str!("../samples/arrays.kt"));
+        interpret(include_str!("../samples/hello.kt"));
+        interpret(include_str!("../samples/factorial.kt"));
+    }
+}
