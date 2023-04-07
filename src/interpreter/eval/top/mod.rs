@@ -24,7 +24,7 @@ impl Eval for TopExpr {
 
 impl Eval for expr::Binding {
     fn eval(&self, context: &Context) -> Object {
-        let ref set = self.set;
+        let set = &self.set;
         let obj = set.expr.eval(context);
         context.var(&set.name.0, obj);
         Object::Unit

@@ -26,7 +26,7 @@ impl Validate for expr::ShortExpr {
 impl Validate for expr::Ident {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
         let name = &self.0;
-        if let Some(ty) = context.find_var_type(&name) {
+        if let Some(ty) = context.find_var_type(name) {
             Some(ty)
         } else {
             context.error(format!("ident {name} not found"));

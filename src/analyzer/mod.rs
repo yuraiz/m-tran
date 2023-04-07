@@ -124,20 +124,18 @@ impl<'a> Context<'a> {
 
         if let Some(ty) = self.find_predefined_fun_ret_type(ident, args) {
             Some(ty)
-        } else {
-            if let Some(ty) = self.functions.get(name) {
-                if ty.args == args? {
-                    Some(ty.ret_type.clone())
-                } else {
-                    self.error(format!(
-                        "function with name {name} found but it's arguments wrong"
-                    ));
-                    None
-                }
+        } else if let Some(ty) = self.functions.get(name) {
+            if ty.args == args? {
+                Some(ty.ret_type.clone())
             } else {
-                self.error_with_span(format!("function with name {name} not found"), ident.span);
+                self.error(format!(
+                    "function with name {name} found but it's arguments wrong"
+                ));
                 None
             }
+        } else {
+            self.error_with_span(format!("function with name {name} not found"), ident.span);
+            None
         }
     }
 

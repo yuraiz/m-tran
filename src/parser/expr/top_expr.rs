@@ -16,14 +16,14 @@ impl TryParse for TopExpr {
 
         match pair.token {
             Token::Ident => {
-                if let Ok((r, pairs)) = Set::try_parse(pairs) {
-                    return Ok((TopExpr::Set(r), pairs));
-                } else if let Ok((r, pairs)) = Call::try_parse(pairs) {
-                    return Ok((TopExpr::Call(r), pairs));
-                } else if let Ok((r, pairs)) = SetByIndex::try_parse(pairs) {
-                    return Ok((TopExpr::SetByIndex(r), pairs));
+                if let Ok((r, pairs)) = try_parse(pairs) {
+                    Ok((TopExpr::Set(r), pairs))
+                } else if let Ok((r, pairs)) = try_parse(pairs) {
+                    Ok((TopExpr::Call(r), pairs))
+                } else if let Ok((r, pairs)) = try_parse(pairs) {
+                    Ok((TopExpr::SetByIndex(r), pairs))
                 } else {
-                    Err(ParseError::WrongExprType(*pair, &stringify!(TopExpr)))
+                    Err(ParseError::WrongExprType(*pair, "TopExpr"))
                 }
             }
             Token::If | Token::For | Token::While | Token::Return => {

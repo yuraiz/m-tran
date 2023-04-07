@@ -25,17 +25,9 @@ impl Validate for expr::Call {
             .collect();
 
         if args.len() == self.args.len() {
-            if let Some(ret_type) = context.find_fun_ret_type(&self.name, Some(&args)) {
-                Some(ret_type)
-            } else {
-                None
-            }
+            context.find_fun_ret_type(&self.name, Some(&args))
         } else {
-            if let Some(ret_type) = context.find_fun_ret_type(&self.name, None) {
-                Some(ret_type)
-            } else {
-                None
-            }
+            context.find_fun_ret_type(&self.name, None)
         }
     }
 }

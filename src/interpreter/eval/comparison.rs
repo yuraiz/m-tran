@@ -21,12 +21,10 @@ impl Eval for ComparisonExpr {
             _ => unreachable!(),
         };
 
-        let res = match (cmp, self) {
-            (std::cmp::Ordering::Less, ComparisonExpr::LessThan(_)) => true,
-            (std::cmp::Ordering::Greater, ComparisonExpr::MoreThan(_)) => true,
-            _ => false,
-        };
-
-        Boolean(res)
+        Boolean(matches!(
+            (cmp, self),
+            (std::cmp::Ordering::Less, ComparisonExpr::LessThan(_))
+                | (std::cmp::Ordering::Greater, ComparisonExpr::MoreThan(_))
+        ))
     }
 }

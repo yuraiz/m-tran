@@ -84,12 +84,10 @@ impl Validate for expr::Return {
             let actual = expr.validate(context)?;
 
             if actual != expected {
-                context.error(format!("wrong return type"));
+                context.error("wrong return type".to_string());
             }
-        } else {
-            if expected != ExprType::Unit {
-                context.error(format!("wrong return type"));
-            }
+        } else if expected != ExprType::Unit {
+            context.error("wrong return type".to_string());
         }
         Some(ExprType::Unit)
     }

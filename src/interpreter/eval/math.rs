@@ -63,8 +63,7 @@ impl Eval for expr::Add {
 
         match (l, r) {
             (Int(l), Int(r)) => Int(l.wrapping_add(r)),
-            (String(string), other) => {
-                let mut string = string.to_owned();
+            (String(mut string), other) => {
                 string.push_str(&other.to_string());
                 String(string)
             }

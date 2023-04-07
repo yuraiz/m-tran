@@ -32,7 +32,7 @@ macro_rules! expr_enum {
                     }
                 )+
 
-                Err(ParseError::WrongExprType(*pair, &stringify!($name)))
+                Err(ParseError::WrongExprType(*pair, stringify!($name)))
             }
         }
 

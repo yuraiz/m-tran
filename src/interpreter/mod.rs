@@ -53,7 +53,7 @@ impl Context {
 
     fn set(&self, name: &str, obj: Object) {
         for scope in self.scopes.borrow_mut().iter_mut().rev() {
-            if let Some(_) = scope.get(name) {
+            if scope.get(name).is_some() {
                 scope.insert(name.to_owned(), obj);
                 return;
             }
@@ -94,7 +94,7 @@ impl Context {
             }
 
             self.pop();
-            return Object::Unit;
+            Object::Unit
         } else {
             unimplemented!("function {name} doesn't exist")
         }

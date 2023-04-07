@@ -58,7 +58,7 @@ fn print_parse_error(source: &str, error: parser::ParseError) {
                 lo: source.len(),
                 hi: source.len(),
             },
-            &format!("Unexpected end of input"),
+            "Unexpected end of input",
         ),
         parser::ParseError::NotImplementedYet => eprintln!("Use of not implemented feature"),
         parser::ParseError::WrongExprType(pair, expected) => pretty_print_error(

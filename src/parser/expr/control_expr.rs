@@ -30,7 +30,7 @@ impl TryParse for ControlExpr {
                 let (r, pairs) = try_parse(pairs)?;
                 Ok((ControlExpr::Return(r), pairs))
             }
-            _ => Err(ParseError::WrongExprType(*pair, &stringify!(ControlExpr))),
+            _ => Err(ParseError::WrongExprType(*pair, "ControlExpr")),
         }
     }
 }

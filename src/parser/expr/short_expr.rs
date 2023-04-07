@@ -25,7 +25,7 @@ impl TryParse for ShortExpr {
                     Ok((ShortExpr::Ident(r), pairs))
                 }
             }
-            _ => Err(ParseError::WrongExprType(*pair, &stringify!(ShortExpr))),
+            _ => Err(ParseError::WrongExprType(*pair, "ShortExpr")),
         }
     }
 }
