@@ -118,24 +118,19 @@ impl TryParse for Call {
 
 #[derive(Debug, PartialEq)]
 pub struct SetByIndex {
-    pub name: Ident,
-    pub index: BoxedExpr,
+    pub get_by_index: GetByIndex,
     pub expr: BoxedExpr,
 }
 
 impl TryParse for SetByIndex {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
-        let (name, pairs) = Ident::try_parse(pairs)?;
-
-        let pairs = expect_symbol(pairs, '[')?;
-        let (index, pairs) = try_parse(pairs)?;
-        let pairs = expect_symbol(pairs, ']')?;
+        let (get_by_index, pairs) = try_parse(pairs)?;
 
         let pairs = expect_symbol(pairs, '=')?;
 
         let (expr, pairs) = try_parse(pairs)?;
 
-        let set = SetByIndex { name, index, expr };
+        let set = SetByIndex { get_by_index, expr };
 
         Ok((set, pairs))
     }
@@ -168,8 +163,7 @@ mod tests {
         assert_eq!(
             make::<TopExpr>("a[i + j * n] = b"),
             TopExpr::SetByIndex(SetByIndex {
-                name: Ident("a".to_string()),
-                index: make("i + j * n"),
+                get_by_index: make("a[i + j * n]"),
                 expr: make("b"),
             })
         );

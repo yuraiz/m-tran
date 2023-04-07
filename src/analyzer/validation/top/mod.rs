@@ -10,7 +10,7 @@ impl Validate for expr::TopExpr {
             Binding(expr) => expr,
             Set(expr) => expr,
             ControlExpr(expr) => expr,
-            _ => panic!(),
+            SetByIndex(expr) => expr,
         };
         expr.validate(context)
     }
@@ -67,5 +67,11 @@ impl Validate for expr::Set {
             );
             None
         }
+    }
+}
+
+impl Validate for expr::SetByIndex {
+    fn validate(&self, context: &mut Context) -> Option<ExprType> {
+        ensure_type_equality(&self.get_by_index, &*self.expr, context)
     }
 }

@@ -41,9 +41,9 @@ impl Eval for expr::Set {
 
 impl Eval for expr::SetByIndex {
     fn eval(&self, context: &Context) -> Object {
-        let name = &self.name.0;
+        let name = &self.get_by_index.ident.0;
         let value = self.expr.eval(context);
-        let Object::Int(index) = self.index.eval(context) else {
+        let Object::Int(index) = self.get_by_index.index.eval(context) else {
             unreachable!()
         };
 

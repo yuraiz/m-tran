@@ -4,6 +4,7 @@ use super::*;
 #[derive(PartialEq)]
 pub enum ShortExpr {
     Ident(Ident),
+    GetByIndex(GetByIndex),
     Literal(Literal),
 }
 
@@ -17,8 +18,12 @@ impl TryParse for ShortExpr {
                 Ok((ShortExpr::Literal(r), pairs))
             }
             Token::Ident => {
-                let (r, pairs) = try_parse(pairs)?;
-                Ok((ShortExpr::Ident(r), pairs))
+                if let Ok((r, pairs)) = try_parse(pairs) {
+                    Ok((ShortExpr::GetByIndex(r), pairs))
+                } else {
+                    let (r, pairs) = try_parse(pairs)?;
+                    Ok((ShortExpr::Ident(r), pairs))
+                }
             }
             _ => Err(ParseError::WrongExprType(*pair, &stringify!(ShortExpr))),
         }
@@ -30,6 +35,7 @@ impl std::fmt::Debug for ShortExpr {
         match self {
             Self::Ident(child) => child.fmt(f),
             Self::Literal(child) => child.fmt(f),
+            Self::GetByIndex(child) => child.fmt(f),
         }
     }
 }
@@ -41,6 +47,23 @@ impl TryParse for Ident {
     fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
         let (ident_pair, pairs) = expect_token(pairs, Token::Ident)?;
         Ok((Self(ident_pair.str().to_owned()), pairs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct GetByIndex {
+    pub ident: Spanned<Ident>,
+    pub index: BoxedExpr,
+}
+
+impl TryParse for GetByIndex {
+    fn try_parse<'a>(pairs: &'a [Pair<'a>]) -> ParseResult<Self> {
+        let (ident, pairs) = try_parse(pairs)?;
+        let pairs = expect_symbol(pairs, '[')?;
+        let (index, pairs) = try_parse(pairs)?;
+        let pairs = expect_symbol(pairs, ']')?;
+
+        Ok((Self { ident, index }, pairs))
     }
 }
 
@@ -130,6 +153,17 @@ mod tests {
     fn ident() {
         let ident: ShortExpr = make("source");
         assert_eq!(ident, ShortExpr::Ident(Ident("source".into())))
+    }
+
+    #[test]
+    fn get_by_index() {
+        assert_eq!(
+            make::<ShortExpr>("a[i]"),
+            ShortExpr::GetByIndex(GetByIndex {
+                ident: make("a"),
+                index: make("i")
+            })
+        )
     }
 
     #[test]
