@@ -182,9 +182,9 @@ pub fn check_program(prog: &Program) -> Vec<(Span, String)> {
 
     context.get_functions(prog);
 
-    context.validate_functions(prog);
-
     context.check_main();
+
+    context.validate_functions(prog);
 
     context.errors
 }

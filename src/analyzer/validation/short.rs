@@ -39,21 +39,21 @@ impl Validate for expr::GetByIndex {
     fn validate(&self, context: &mut Context) -> Option<ExprType> {
         let ident = self.ident.validate(context);
         let index = self.index.validate(context);
-        if index? == ExprType::Primitive(Primitive::Int) {
-            match ident? {
-                ExprType::Array(ty) => Some(*ty),
-                ExprType::Primitive(Primitive::String) => {
-                    Some(ExprType::Primitive(Primitive::Char))
-                }
-                _ => {
-                    context.error(
-                        "index operator is only supported by arrays and strings".to_string(),
-                    );
-                    None
-                }
+
+        match index {
+            Some(ExprType::Primitive(Primitive::Int)) | None => {}
+            _ => {
+                context.error_with_span("only Int index is supported".to_string(), self.index.span)
             }
-        } else {
-            None
+        };
+
+        match ident? {
+            ExprType::Array(ty) => Some(*ty),
+            ExprType::Primitive(Primitive::String) => Some(ExprType::Primitive(Primitive::Char)),
+            _ => {
+                context.error("index operator is only supported by arrays and strings".to_string());
+                None
+            }
         }
     }
 }

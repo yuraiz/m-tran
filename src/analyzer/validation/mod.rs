@@ -105,8 +105,9 @@ where
     L: Validate,
     R: Validate,
 {
-    let l = left.validate(context)?;
+    let l = left.validate(context);
     let r = right.validate(context)?;
+    let l = l?;
     if l == r {
         Some(r)
     } else {
