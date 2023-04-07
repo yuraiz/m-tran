@@ -38,7 +38,6 @@ impl Eval for GetByIndex {
                     entry.clone()
                 } else {
                     context.exception("Index out of range".to_owned());
-                    Object::Unit
                 }
             }
             _ => unreachable!(),

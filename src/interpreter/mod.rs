@@ -69,9 +69,9 @@ impl Context {
         self.scopes.borrow_mut().pop();
     }
 
-    fn exception(&self, message: String) {
+    fn exception(&self, message: String) -> ! {
         eprintln!("{}", message);
-        std::process::exit(0);
+        std::process::exit(0)
     }
 
     fn call_function(&self, name: &str, args: Vec<Object>) -> Object {
@@ -106,9 +106,12 @@ impl Context {
             "println" => println,
             "print" => print,
             "arrayOf" => arrayOf,
+            "readln" => readln,
+            "readlnInt" => readlnInt,
+            "readlnBoolean" => readlnBoolean,
             _ => return None,
         };
-        Some(fun(args.to_vec()))
+        Some(fun(args.to_vec(), self))
     }
 }
 
@@ -117,21 +120,53 @@ mod funcs {
 
     use super::*;
 
-    pub fn print(args: Vec<Object>) -> Object {
+    pub fn print(args: Vec<Object>, _: &Context) -> Object {
         for arg in args {
             print!("{}", arg.to_string())
         }
         Object::Unit
     }
 
-    pub fn println(args: Vec<Object>) -> Object {
-        print(args);
+    pub fn println(args: Vec<Object>, c: &Context) -> Object {
+        print(args, c);
         println!();
         Object::Unit
     }
 
-    pub fn arrayOf(args: Vec<Object>) -> Object {
+    pub fn arrayOf(args: Vec<Object>, _: &Context) -> Object {
         Object::Array(args)
+    }
+
+    // "readln" => Some(ExprType::Primitive(Primitive::String)),
+    // "readlnInt" => Some(ExprType::Primitive(Primitive::Int)),
+    // "readlnBoolean" => Some(ExprType::Primitive(Primitive::Boolean)),
+
+    fn read_string(context: &Context) -> String {
+        if let Some(Ok(string)) = std::io::stdin().lines().next() {
+            string
+        } else {
+            context.exception("Failed to read input".into())
+        }
+    }
+
+    pub fn readln(_: Vec<Object>, context: &Context) -> Object {
+        Object::String(read_string(context))
+    }
+
+    pub fn readlnInt(_: Vec<Object>, context: &Context) -> Object {
+        if let Ok(int) = read_string(context).parse() {
+            Object::Int(int)
+        } else {
+            context.exception("Failed to parse Int".into())
+        }
+    }
+
+    pub fn readlnBoolean(_: Vec<Object>, context: &Context) -> Object {
+        if let Ok(int) = read_string(context).parse() {
+            Object::Boolean(int)
+        } else {
+            context.exception("Failed to parse Boolean".into())
+        }
     }
 }
 
