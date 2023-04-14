@@ -67,7 +67,7 @@ impl TryParse for GetByIndex {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum Literal {
     Int(i32),
     Bool(bool),
@@ -87,6 +87,18 @@ impl TryParse for Literal {
         };
 
         Ok((literal, &pairs[1..]))
+    }
+}
+
+impl std::fmt::Debug for Literal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Literal::Int(i) => i.to_string(),
+            Literal::Bool(b) => b.to_string(),
+            Literal::Char(c) => c.to_string(),
+            Literal::String(s) => s.to_owned(),
+        };
+        f.debug_tuple("Literal").field(&s).finish()
     }
 }
 
