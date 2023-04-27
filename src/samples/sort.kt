@@ -1,4 +1,4 @@
-fun size(arr: Array<Int>): Int {
+fun size(arr: Array<String>): Int {
     var size = 0
     for (el in arr) {
         size = size + 1
@@ -6,7 +6,7 @@ fun size(arr: Array<Int>): Int {
     return size
 }
 
-fun insertionSort(arr: Array<Int>) {
+fun insertionSort(arr: Array<String>) {
     val lastIndex = size(arr) - 1
 
     for (i in 1..lastIndex) {
@@ -21,7 +21,7 @@ fun insertionSort(arr: Array<Int>) {
     }
 }
 
-fun printArray(arr: Array<Int>) {
+fun printArray(arr: Array<String>) {
     for (num in arr) {
         print("" + num + ", ")
     }
@@ -29,10 +29,34 @@ fun printArray(arr: Array<Int>) {
 }
 
 fun main() {
-    val arr = arrayOf(15, 3, 12, 6, -9, 9, 0)
-    print("Before Sorting: ")
+    val arr = sampleStrings()
+    println("Before Sorting: ")
     printArray(arr)
+
     insertionSort(arr)
-    print("After Sorting: ")
+    
+    println("After Sorting: ")
     printArray(arr)
+}
+
+fun sampleStrings(): Array<String> {
+    return arrayOf(
+        "parsing", 
+        "bypassing",
+        "Ranch",
+        "innovative",
+        "granular",
+        "Producer",
+        "Armenia",
+        "adapter",
+        "Sleek",
+        "Future",
+        "Officer",
+        "Interactions",
+        "hack",
+        "Bahamian",
+        "integrate",
+        "United",
+        "Spain",
+    )
 }

@@ -35,6 +35,8 @@ where
     let mut sequence = vec![];
 
     loop {
+        mut_pairs = ignore_newlines(mut_pairs);
+
         match expect_token(mut_pairs, end) {
             Ok((_, pairs)) => {
                 return Ok((sequence, pairs));
