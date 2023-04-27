@@ -37,6 +37,7 @@ impl Token {
         }
 
         let parsing_functions = [
+            parse_comment,
             parse_symbol,
             parse_kw,
             parse_bool,
@@ -69,6 +70,24 @@ impl Token {
 impl From<char> for Token {
     fn from(val: char) -> Self {
         Token::Symbol(val)
+    }
+}
+
+fn parse_comment(string: &str) -> Option<(Token, &str)> {
+    if string.starts_with("/*") {
+        if let Some(end) = string.find("*/") {
+            Some((Token::WhiteSpace, &string[(end + "*/".len())..]))
+        } else {
+            Some((Token::Unexpected, ""))
+        }
+    } else if string.starts_with("//") {
+        if let Some(end) = string.find("\n").or_else(|| string.find("\r")) {
+            Some((Token::NewLine, &string[(end + 1)..]))
+        } else {
+            Some((Token::End, ""))
+        }
+    } else {
+        None
     }
 }
 
