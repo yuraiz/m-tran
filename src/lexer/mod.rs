@@ -111,8 +111,9 @@ mod tests {
                 .any(|pair| panic!("unexpected: {}", pair.str()));
         }
 
-        // assert_expected(include_str!("../samples/hello.kt"));
+        assert_expected(include_str!("../samples/hello.kt"));
         assert_expected(include_str!("../samples/arrays.kt"));
-        // assert!(all_expected(include_str!("../samples/factorial.kt")));
+        assert_expected(include_str!("../samples/factorial.kt"));
+        assert_expected(include_str!("../samples/sort.kt"));
     }
 }

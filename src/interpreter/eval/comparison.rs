@@ -6,12 +6,27 @@ use crate::{
 
 impl Eval for ComparisonExpr {
     fn eval(&self, context: &Context) -> Object {
-        let (l, r) = match self {
-            ComparisonExpr::LessThan(expr) => (expr.left.eval(context), expr.right.eval(context)),
-            ComparisonExpr::MoreThan(expr) => (expr.left.eval(context), expr.right.eval(context)),
-        };
-
+        use ComparisonExpr::*;
         use Object::*;
+
+        let (l, r) = match self {
+            LessThan(expr) => (expr.left.eval(context), expr.right.eval(context)),
+            MoreThan(expr) => (expr.left.eval(context), expr.right.eval(context)),
+            And(expr) => {
+                return if let Boolean(true) = expr.left.eval(context) {
+                    return expr.right.eval(context);
+                } else {
+                    Boolean(false)
+                };
+            }
+            Or(expr) => {
+                return if let Boolean(false) = expr.left.eval(context) {
+                    return expr.right.eval(context);
+                } else {
+                    Boolean(true)
+                };
+            }
+        };
 
         let cmp = match (l, r) {
             (Int(l), Int(r)) => l.cmp(&r),

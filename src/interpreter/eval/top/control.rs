@@ -62,7 +62,7 @@ impl Eval for expr::For {
                 }
             }
             Object::Array(arr) => {
-                for obj in arr {
+                for obj in arr.borrow().clone() {
                     context.var(name, obj);
                     for expr in &self.body {
                         expr.eval(context);

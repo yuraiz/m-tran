@@ -12,7 +12,7 @@ pub use top_expr::*;
 
 use super::*;
 
-expr_enum!(Expr => TopExpr | MathExpr | ComparisonExpr | ShortExpr);
+expr_enum!(Expr => MathExpr | TopExpr | ComparisonExpr | ShortExpr);
 
 macro_rules! expr_enum {
     ($name:ident => $($type:ident)|+ ) => {

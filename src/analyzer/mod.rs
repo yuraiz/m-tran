@@ -238,5 +238,6 @@ mod tests {
         validate(include_str!("../samples/arrays.kt"));
         validate(include_str!("../samples/hello.kt"));
         validate(include_str!("../samples/factorial.kt"));
+        validate(include_str!("../samples/sort.kt"));
     }
 }

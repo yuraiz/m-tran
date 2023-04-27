@@ -51,15 +51,15 @@ impl Eval for expr::SetByIndex {
             context.exception("Index out of range".to_owned());
         }
 
-        let mut obj = context.get(name);
+        let obj = context.get(name);
 
-        match obj {
-            Object::Array(ref mut arr) => {
-                if let Some(entry) = arr.get_mut(index as usize) {
-                    *entry = value;
-                } else {
-                    context.exception("Index out of range".to_owned())
-                }
+        match &obj {
+            Object::Array(arr) => {
+                let mut arr = arr.borrow_mut();
+                let entry = arr
+                    .get_mut(index as usize)
+                    .unwrap_or_else(|| context.exception("Index out of range".to_owned()));
+                *entry = value;
             }
             _ => unreachable!(),
         }

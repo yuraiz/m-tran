@@ -7,6 +7,8 @@ pub enum Token {
     Str,
     Int(i32),
     Bool(bool),
+    AndOp,
+    OrOp,
     RangeOp,
     NewLine,
     Symbol(char),
@@ -21,6 +23,7 @@ pub enum Token {
     Var,
     Val,
     Return,
+    Break,
 
     Unexpected,
 }
@@ -41,6 +44,7 @@ impl Token {
             parse_ident,
             parse_int,
             parse_new_line,
+            parse_bool_op,
             parse_range_op,
             parse_str,
             parse_white_space,
@@ -100,6 +104,14 @@ fn parse_new_line(string: &str) -> Option<(Token, &str)> {
     Some((NewLine, string))
 }
 
+fn parse_bool_op(string: &str) -> Option<(Token, &str)> {
+    if let Some(string) = string.strip_prefix("&&") {
+        Some((AndOp, string))
+    } else {
+        string.strip_prefix("||").map(|string| (OrOp, string))
+    }
+}
+
 fn parse_range_op(string: &str) -> Option<(Token, &str)> {
     string.strip_prefix("..").map(|string| (RangeOp, string))
 }
@@ -121,6 +133,7 @@ fn parse_kw(string: &str) -> Option<(Token, &str)> {
         "var" => Var,
         "val" => Val,
         "return" => Return,
+        "break" => Break,
         _ => return None,
     };
 

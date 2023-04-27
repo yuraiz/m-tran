@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 #[derive(Debug, Clone)]
 pub enum Object {
     Unit,
@@ -5,7 +7,7 @@ pub enum Object {
     String(String),
     Boolean(bool),
     Char(char),
-    Array(Vec<Object>),
+    Array(Rc<RefCell<Vec<Object>>>),
     Range(Box<Object>, Box<Object>),
 }
 

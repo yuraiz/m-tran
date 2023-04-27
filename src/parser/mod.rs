@@ -208,6 +208,7 @@ mod tests {
     fn program() {
         make::<Program>(include_str!("../samples/hello.kt"));
         make::<Program>(include_str!("../samples/arrays.kt"));
-        dbg!(make::<Program>(include_str!("../samples/factorial.kt")));
+        make::<Program>(include_str!("../samples/factorial.kt"));
+        make::<Program>(include_str!("../samples/sort.kt"));
     }
 }

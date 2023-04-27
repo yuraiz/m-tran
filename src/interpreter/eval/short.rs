@@ -30,16 +30,14 @@ impl Eval for GetByIndex {
             context.exception("Index out of range".to_owned());
         }
 
-        let mut obj = context.get(name);
+        let obj = context.get(name);
 
         match obj {
-            Object::Array(ref mut arr) => {
-                if let Some(entry) = arr.get_mut(index as usize) {
-                    entry.clone()
-                } else {
-                    context.exception("Index out of range".to_owned());
-                }
-            }
+            Object::Array(arr) => arr
+                .borrow()
+                .get(index as usize)
+                .unwrap_or_else(|| context.exception("Index out of range".to_owned()))
+                .to_owned(),
             _ => unreachable!(),
         }
     }

@@ -134,7 +134,7 @@ mod funcs {
     }
 
     pub fn arrayOf(args: Vec<Object>, _: &Context) -> Object {
-        Object::Array(args)
+        Object::Array(std::rc::Rc::new(RefCell::new(args)))
     }
 
     // "readln" => Some(ExprType::Primitive(Primitive::String)),
@@ -187,5 +187,6 @@ mod tests {
         interpret(include_str!("../samples/arrays.kt"));
         interpret(include_str!("../samples/hello.kt"));
         interpret(include_str!("../samples/factorial.kt"));
+        interpret(include_str!("../samples/sort.kt"));
     }
 }
