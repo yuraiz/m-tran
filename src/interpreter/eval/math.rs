@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use super::Eval;
 use crate::{
     interpreter::{Context, Object},
@@ -75,6 +77,11 @@ impl Eval for expr::Add {
                 let mut string = other.to_string();
                 string.push_str(&s);
                 String(string)
+            }
+            (Array(l), Array(r)) => {
+                let mut sum = l.borrow().clone();
+                sum.append(&mut r.borrow().clone());
+                Array(std::rc::Rc::new(RefCell::new(sum)))
             }
             _ => unreachable!(),
         }
